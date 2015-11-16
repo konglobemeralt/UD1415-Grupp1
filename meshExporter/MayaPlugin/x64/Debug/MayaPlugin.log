@@ -1,0 +1,10 @@
+﻿Build started 2015-11-16 15:50:11.
+     1>Project "C:\Temp\Real-Time-Viewer-master - works with 15 but slowed by ringbuffers possibly\project debug - Copy\MayaPlugin\MayaPlugin.vcxproj" on node 2 (Build target(s)).
+     1>Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Temp\Real-Time-Viewer-master - works with 15 but slowed by ringbuffers possibly\project debug - Copy\x64\Debug\MayaPlugin.mll" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Program Files\Autodesk\Maya2016\lib" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"C:\Temp\Real-Time-Viewer-master - works with 15 but slowed by ringbuffers possibly\project debug - Copy\x64\Debug\MayaPlugin.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Temp\Real-Time-Viewer-master - works with 15 but slowed by ringbuffers possibly\project debug - Copy\x64\Debug\MayaPlugin.lib" /MACHINE:X64 /DLL x64\Debug\Source.obj
+         MayaPlugin.vcxproj -> C:\Temp\Real-Time-Viewer-master - works with 15 but slowed by ringbuffers possibly\project debug - Copy\x64\Debug\MayaPlugin.mll
+     1>Done Building Project "C:\Temp\Real-Time-Viewer-master - works with 15 but slowed by ringbuffers possibly\project debug - Copy\MayaPlugin\MayaPlugin.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:00.30
