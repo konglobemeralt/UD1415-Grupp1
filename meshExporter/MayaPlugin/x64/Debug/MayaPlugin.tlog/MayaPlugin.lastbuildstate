@@ -1,2 +1,2 @@
 #TargetFrameworkVersion=v4.0:PlatformToolSet=v140:EnableManagedIncrementalBuild=false:VCToolArchitecture=Native32Bit
-Debug|x64|C:\Temp\Real-Time-Viewer-master - works with 15 but slowed by ringbuffers possibly\project debug - Copy\|
+Debug|x64|C:\dev\UD1415-Grupp1\meshExporter\|

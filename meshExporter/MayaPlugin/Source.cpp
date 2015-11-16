@@ -11,7 +11,7 @@ using namespace std;
 
 void initUI();
 
-
+void ExportEverything();
 
 class exporterCommands : public MPxCommand
 {
@@ -23,6 +23,7 @@ public:
 	{
 		setResult("exporterCommand Called\n");
 		MGlobal::displayInfo("Button press!");
+		ExportEverything();
 		return MS::kSuccess;
 	}
 
@@ -83,8 +84,12 @@ void initUI()
 
 	MGlobal::executeCommand("window -title ""MeshExporter"" -w 200 -h 200;");
 	MGlobal::executeCommand("columnLayout;");
-	MGlobal::executeCommand("button -label ""Test"" -command ""exporterCommands"";");
+	MGlobal::executeCommand("button -w 50 -h 20 -label ""Export"" -command ""exporterCommands"";");
 	MGlobal::executeCommand("showWindow;;");
 
 }
 
+void ExportEverything()
+{
+	MGlobal::displayInfo("Pretending To Export Everything!!");
+}
