@@ -12,16 +12,17 @@ using namespace std;
 void initUI();
 
 void ExportEverything();
+void ExportSelected();
 
-class exporterCommands : public MPxCommand
+class exportAll : public MPxCommand
 {
 public:
-	exporterCommands() {};
-	~exporterCommands() {};
+	exportAll() {};
+	~exportAll() {};
 
 	virtual MStatus doIt(const MArgList&)
 	{
-		setResult("exporterCommand Called\n");
+		setResult("exportAll Called\n");
 		MGlobal::displayInfo("Button press!");
 		ExportEverything();
 		return MS::kSuccess;
@@ -29,10 +30,30 @@ public:
 
 	static void* creator()
 	{
-		return new exporterCommands;
+		return new exportAll;
 	}
 
+};
 
+
+class exportSelected : public MPxCommand
+{
+public:
+	exportSelected() {};
+	~exportSelected() {};
+
+	virtual MStatus doIt(const MArgList&)
+	{
+		setResult("exportSelected Called\n");
+		MGlobal::displayInfo("Second Button press!");
+		ExportSelected();
+		return MS::kSuccess;
+	}
+
+	static void* creator()
+	{
+		return new exportSelected;
+	}
 
 };
 
@@ -50,13 +71,15 @@ EXPORT MStatus initializePlugin(MObject obj)
 	}
 
 	MStatus status;
-	// register our command with maya
-	status = plugin.registerCommand("exporterCommands", exporterCommands::creator);
+	// register our commands with maya
+	status = plugin.registerCommand("exportAll", exportAll::creator);
+	status = plugin.registerCommand("exportSelected", exportSelected::creator);
 
 	initUI();
 
+
 	MGlobal::displayInfo("Maya plugin loaded!!");
-	
+
 
 	return res;
 }
@@ -71,7 +94,10 @@ EXPORT MStatus uninitializePlugin(MObject obj)
 	// if any resources have been allocated, release and free here before
 	// returning...
 
-
+	MStatus status;
+	// deregister our commands with maya
+	status = plugin.deregisterCommand("exportAll");
+	status = plugin.deregisterCommand("exportSelected");
 
 	MGlobal::displayInfo("Maya plugin unloaded!!");
 
@@ -82,9 +108,10 @@ EXPORT MStatus uninitializePlugin(MObject obj)
 void initUI()
 {
 
-	MGlobal::executeCommand("window -title ""MeshExporter"" -w 200 -h 200;");
+	MGlobal::executeCommand("window -title ""MeshExporter"" -w 300 -h 300;");
 	MGlobal::executeCommand("columnLayout;");
-	MGlobal::executeCommand("button -w 50 -h 20 -label ""Export"" -command ""exporterCommands"";");
+	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Everything"" -command ""exportAll"";");
+	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Selected"" -command ""exportSelected"";");
 	MGlobal::executeCommand("showWindow;;");
 
 }
@@ -92,4 +119,15 @@ void initUI()
 void ExportEverything()
 {
 	MGlobal::displayInfo("Pretending To Export Everything!!");
+
+
+}
+
+
+
+void ExportSelected()
+{
+	MGlobal::displayInfo("Pretending To Export Selected!!");
+
+
 }

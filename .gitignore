@@ -26,3 +26,4 @@
 *.exe
 *.out
 *.app
+meshExporter/MayaPlugin.opensdf
