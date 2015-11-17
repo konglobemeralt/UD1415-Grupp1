@@ -3,6 +3,7 @@
 #include <fstream>
 #include <DirectXMath.h>
 #include <Windows.h>
+#include <string>
 #include <vector>
 
 
@@ -13,6 +14,7 @@ void initUI();
 
 void ExportEverything();
 void ExportSelected();
+bool ExportMesh(MFnMesh &mesh);
 
 class exportAll : public MPxCommand
 {
@@ -121,6 +123,30 @@ void ExportEverything()
 	MGlobal::displayInfo("Pretending To Export Everything!!");
 
 
+	MStringArray scene;
+	MGlobal::executeCommand("ls", scene);
+
+	MDagPath dag_path;
+	MItDag dag_iter(MItDag::kBreadthFirst, MFn::kMesh);
+	while (!dag_iter.isDone())
+	{
+		if (dag_iter.getPath(dag_path))
+		{
+			MFnDagNode dag_node = dag_path.node();
+
+			MFnDagNode parentPath(dag_node.parent(0));
+			if (strcmp(parentPath.fullPathName().asChar(), ""))
+				break;
+			if (!dag_node.isIntermediateObject())
+				for (int i = 0; i < scene.length(); i++)
+					if (strcmp(dag_node.name().asChar(), scene[i].asChar()) == 0)
+					{
+						MFnMesh mesh(dag_path);
+						ExportMesh(mesh);
+					}
+		}
+		dag_iter.next();
+	}
 }
 
 
@@ -128,6 +154,39 @@ void ExportEverything()
 void ExportSelected()
 {
 	MGlobal::displayInfo("Pretending To Export Selected!!");
+
+	MStringArray scene;
+	MGlobal::executeCommand("ls -sl", scene);
+
+	MDagPath dag_path;
+	MItDag dag_iter(MItDag::kBreadthFirst, MFn::kMesh);
+	while (!dag_iter.isDone())
+	{
+		if (dag_iter.getPath(dag_path))
+		{
+			MFnDagNode dag_node = dag_path.node();
+
+			MFnDagNode parentPath(dag_node.parent(0));
+			if (strcmp(parentPath.fullPathName().asChar(), ""))
+				break;
+
+			if (!dag_node.isIntermediateObject())
+				for (int i = 0; i < scene.length(); i++)
+					if (strcmp(dag_node.name().asChar(), scene[i].asChar()) == 0)
+					{
+						MFnMesh mesh(dag_path);
+						ExportMesh(mesh);
+					}
+		}
+		dag_iter.next();
+	}
+}
+
+
+bool ExportMesh(MFnMesh &mesh)
+{
+
+	return false;
 
 
 }

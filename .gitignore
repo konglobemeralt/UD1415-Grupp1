@@ -27,3 +27,17 @@
 *.out
 *.app
 meshExporter/MayaPlugin.opensdf
+meshExporter/MayaPlugin.sdf
+meshExporter/MayaPlugin/x64/Debug/MayaPlugin.log
+meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/cl.command.1.tlog
+meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/CL.read.1.tlog
+meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/CL.write.1.tlog
+meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/link.command.1.tlog
+meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/link.read.1.tlog
+meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/link.write.1.tlog
+meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/MayaPlugin.lastbuildstate
+meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/MayaPlugin.write.1u.tlog
+meshExporter/MayaPlugin/x64/Debug/vc140.pdb
+meshExporter/x64/Debug/MayaPlugin.exp
+meshExporter/x64/Debug/MayaPlugin.ilk
+meshExporter/x64/Debug/MayaPlugin.pdb
