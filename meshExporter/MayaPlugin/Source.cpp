@@ -17,6 +17,9 @@ void deleteUI();
 
 //export
 void ExportFinder(bool sl);
+void ExtractLights(MFnMesh &meshDag, Geometry &geometry);
+Geometry ExtractGeometry(MFnMesh &mesh);
+Material ExtractMaterial(MFnMesh &mesh);
 bool ExportMesh(MFnDagNode &primaryMeshDag);
 
 class exportAll : public MPxCommand
@@ -170,12 +173,12 @@ void ExportFinder(bool sl)
 	}
 }
 
-void ExtractLights(MFnDagNode &meshDag, Geometry &geometry)
+void ExtractLights(MFnMesh &meshDag, Geometry &geometry)
 {
 
 }
 
-Geometry ExtractGeometry(MFnDagNode &meshDag)
+Geometry ExtractGeometry(MFnMesh &meshDag)
 {
 	Geometry geometry;
 	ExtractLights(meshDag, geometry);
@@ -186,7 +189,7 @@ Geometry ExtractGeometry(MFnDagNode &meshDag)
 	return geometry;
 }
 
-Material ExtractMaterial(MFnDagNode &meshDag)
+Material ExtractMaterial(MFnMesh &meshDag)
 {
 	Material material;
 
@@ -198,11 +201,11 @@ Material ExtractMaterial(MFnDagNode &meshDag)
 
 bool ExportMesh(MFnDagNode &primaryMeshDag)
 {
-
+	MFnMesh meshFN(primaryMeshDag.object());
 	Mesh primaryMesh;
 	primaryMesh.Name = primaryMeshDag.name().asChar();
-	primaryMesh.geometry = ExtractGeometry(primaryMeshDag);
-	primaryMesh.material = ExtractMaterial(primaryMeshDag);
+	primaryMesh.geometry = ExtractGeometry(meshFN);
+	primaryMesh.material = ExtractMaterial(meshFN);
 
 	//skeletonID?
 
@@ -227,9 +230,10 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 					{
 						MGlobal::displayInfo(dag_node.name());
 
+						MFnMesh subMeshFN;
 						SubMesh subMesh;
 						subMesh.Name = dag_node.name().asChar();
-						subMesh.geometry = ExtractGeometry(dag_node);
+						subMesh.geometry = ExtractGeometry(subMeshFN);
 
 						primaryMesh.subMeshes.push_back(subMesh);
 
