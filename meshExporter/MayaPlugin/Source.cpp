@@ -1,4 +1,5 @@
 #include "maya_includes.h"
+#include "Structs.h"
 #include <iostream>
 #include <fstream>
 #include <DirectXMath.h>
@@ -16,7 +17,7 @@ void deleteUI();
 
 //export
 void ExportFinder(bool sl);
-bool ExportMesh(MFnDagNode &mesh);
+bool ExportMesh(MFnDagNode &primaryMeshDag);
 
 class exportAll : public MPxCommand
 {
@@ -172,12 +173,10 @@ void ExportFinder(bool sl)
 void Export();
 
 
-bool ExportMesh(MFnDagNode &primaryMesh)
+bool ExportMesh(MFnDagNode &primaryMeshDag)
 {
 
-
-
-	//primary mesh export
+	Mesh primaryMesh;
 
 
 
@@ -185,7 +184,7 @@ bool ExportMesh(MFnDagNode &primaryMesh)
 
 
 	MItDag subMeshes(MItDag::kBreadthFirst, MFn::kMesh);
-	subMeshes.reset(primaryMesh.object(), MItDag::kBreadthFirst, MFn::kMesh);
+	subMeshes.reset(primaryMeshDag.object(), MItDag::kBreadthFirst, MFn::kMesh);
 
 	MDagPath dag_path;
 	while (!subMeshes.isDone())
@@ -198,9 +197,9 @@ bool ExportMesh(MFnDagNode &primaryMesh)
 
 
 			MGlobal::displayInfo(parentPath.fullPathName());
-			MGlobal::displayInfo(primaryMesh.fullPathName());
+			MGlobal::displayInfo(primaryMeshDag.fullPathName());
 
-			if (!strcmp(parentPath.fullPathName().asChar(), primaryMesh.fullPathName().asChar()))
+			if (!strcmp(parentPath.fullPathName().asChar(), primaryMeshDag.fullPathName().asChar()))
 				if (!dag_node.isIntermediateObject())
 					{
 						MGlobal::displayInfo(dag_node.name());
