@@ -17,7 +17,7 @@ void deleteUI();
 //export
 void ExportEverything();
 void ExportSelected();
-bool ExportMesh(MFnMesh &mesh);
+bool ExportMesh(MFnDagNode &mesh);
 
 class exportAll : public MPxCommand
 {
@@ -114,11 +114,13 @@ EXPORT MStatus uninitializePlugin(MObject obj)
 
 void initUI()
 {
-	MGlobal::executeCommand("window -rtf true -s false -title ""MeshExporter"" ""meshExporterUI"";");
+	MGlobal::executeCommand("window -wh 200 100 -s false -title ""MeshExporter"" ""meshExporterUI"";");
 	MGlobal::executeCommand("columnLayout -columnAttach ""both"" 5 -rowSpacing 5 -columnWidth 100;;");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Everything"" -command ""exportAll"";");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Selected"" -command ""exportSelected"";");
 	MGlobal::executeCommand("showWindow;;");
+	MGlobal::executeCommand("window -e -wh 200 100 ""meshExporterUI"";");
+
 	
 	MGlobal::displayInfo("UI created");
 }
@@ -176,17 +178,17 @@ void ExportSelected()
 		if (dag_iter.getPath(dag_path))
 		{
 			MFnDagNode dag_node = dag_path.node();
+			MFnDagNode transform = dag_node.parent(0);
+			MFnDagNode parentPath(transform.parent(0));
 
-			MFnDagNode parentPath(dag_node.parent(0));
 			if (strcmp(parentPath.fullPathName().asChar(), ""))
 				break;
 
 			if (!dag_node.isIntermediateObject())
 				for (int i = 0; i < scene.length(); i++)
-					if (strcmp(dag_node.name().asChar(), scene[i].asChar()) == 0)
+					if (strcmp(transform.name().asChar(), scene[i].asChar()) == 0)
 					{
-						MFnMesh mesh(dag_path);
-						ExportMesh(mesh);
+						ExportMesh(transform);
 					}
 		}
 		dag_iter.next();
@@ -194,8 +196,53 @@ void ExportSelected()
 }
 
 
-bool ExportMesh(MFnMesh &mesh)
+bool ExportMesh(MFnDagNode &primaryMesh)
 {
+
+
+
+	//primary mesh export
+
+
+
+
+
+
+	MItDag subMeshes(MItDag::kBreadthFirst, MFn::kMesh);
+	subMeshes.reset(primaryMesh.object(), MItDag::kBreadthFirst, MFn::kMesh);
+
+	MDagPath dag_path;
+	while (!subMeshes.isDone())
+	{
+		if (subMeshes.getPath(dag_path))
+		{
+			MFnDagNode dag_node = dag_path.node();
+			MFnDagNode transform = dag_node.parent(0);
+			MFnDagNode parentPath(transform.parent(0));
+
+
+			MGlobal::displayInfo(parentPath.fullPathName());
+			MGlobal::displayInfo(primaryMesh.fullPathName());
+
+			if (!strcmp(parentPath.fullPathName().asChar(), primaryMesh.fullPathName().asChar()))
+				if (!dag_node.isIntermediateObject())
+					{
+						MGlobal::displayInfo(dag_node.name());
+
+						//submesh export
+
+
+
+
+
+
+
+
+
+					}
+		}
+		subMeshes.next();
+	}
 
 	return false;
 
