@@ -15,8 +15,7 @@ void initUI();
 void deleteUI();
 
 //export
-void ExportEverything();
-void ExportSelected();
+void ExportFinder(bool sl);
 bool ExportMesh(MFnDagNode &mesh);
 
 class exportAll : public MPxCommand
@@ -29,7 +28,7 @@ public:
 	{
 		setResult("exportAll Called\n");
 		MGlobal::displayInfo("Button press!");
-		ExportEverything();
+		ExportFinder(false);
 		return MS::kSuccess;
 	}
 
@@ -51,7 +50,7 @@ public:
 	{
 		setResult("exportSelected Called\n");
 		MGlobal::displayInfo("Second Button press!");
-		ExportSelected();
+		ExportFinder(true);
 		return MS::kSuccess;
 	}
 
@@ -131,45 +130,15 @@ void deleteUI()
 	MGlobal::displayInfo("UI deleted");
 }
 
-void ExportEverything()
-{
-	MGlobal::displayInfo("Pretending To Export Everything!!");
-
-
-	MStringArray scene;
-	MGlobal::executeCommand("ls", scene);
-
-	MDagPath dag_path;
-	MItDag dag_iter(MItDag::kBreadthFirst, MFn::kMesh);
-	while (!dag_iter.isDone())
-	{
-		if (dag_iter.getPath(dag_path))
-		{
-			MFnDagNode dag_node = dag_path.node();
-
-			MFnDagNode parentPath(dag_node.parent(0));
-			if (strcmp(parentPath.fullPathName().asChar(), ""))
-				break;
-			if (!dag_node.isIntermediateObject())
-				for (int i = 0; i < scene.length(); i++)
-					if (strcmp(dag_node.name().asChar(), scene[i].asChar()) == 0)
-					{
-						MFnMesh mesh(dag_path);
-						ExportMesh(mesh);
-					}
-		}
-		dag_iter.next();
-	}
-}
-
-
-
-void ExportSelected()
+void ExportFinder(bool sl)
 {
 	MGlobal::displayInfo("Pretending To Export Selected!!");
 
 	MStringArray scene;
-	MGlobal::executeCommand("ls -sl", scene);
+	if (sl)
+		MGlobal::executeCommand("ls -sl", scene);
+	else
+		MGlobal::executeCommand("ls", scene);
 
 	MDagPath dag_path;
 	MItDag dag_iter(MItDag::kBreadthFirst, MFn::kMesh);
@@ -194,6 +163,8 @@ void ExportSelected()
 		dag_iter.next();
 	}
 }
+
+void Export();
 
 
 bool ExportMesh(MFnDagNode &primaryMesh)
