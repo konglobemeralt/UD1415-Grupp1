@@ -17,7 +17,7 @@ void deleteUI();
 
 //export
 void ExportFinder(bool sl);
-void ExtractLights(MFnMesh &meshDag, Geometry &geometry);
+void ExtractLights(MFnMesh &mesh, Geometry &geometry);
 Geometry ExtractGeometry(MFnMesh &mesh);
 Material ExtractMaterial(MFnMesh &mesh);
 bool ExportMesh(MFnDagNode &primaryMeshDag);
@@ -175,26 +175,172 @@ void ExportFinder(bool sl)
 
 void ExtractLights(MFnMesh &meshDag, Geometry &geometry)
 {
-
+	//TODO
 }
 
-Geometry ExtractGeometry(MFnMesh &meshDag)
+Geometry ExtractGeometry(MFnMesh &mesh)
 {
 	Geometry geometry;
-	ExtractLights(meshDag, geometry);
+	ExtractLights(mesh, geometry);
+	MSpace::Space world_space = MSpace::kTransform;
 
+	MFloatPointArray points;
+	MFloatVectorArray normals;
 
+	MGlobal::executeCommand(MString("polyTriangulate -ch 1 " + mesh.name()));
+	mesh.getPoints(points, world_space);
 
+	for (int i = 0; i < points.length(); i++)
+	{
+		Point temppoints = { points[i].x, points[i].y, points[i].z };
+		geometry.points.push_back(temppoints);
+	}
 
+	mesh.getNormals(normals, world_space);
+
+	for (int i = 0; i < normals.length(); i++)
+	{
+		Normal tempnormals = { normals[i].x, normals[i].y, normals[i].z };
+		geometry.normals.push_back(tempnormals);
+	}
+
+	//variabler för att mellanlagra uvdata och tangenter/bitangenter
+	MStringArray uvSets;
+	mesh.getUVSetNames(uvSets);
+
+	MFloatArray Us;
+	MFloatArray Vs;
+	TexCoord UVs;
+
+	MString currentSet = uvSets[0];
+	mesh.getUVs(Us, Vs, &currentSet);
+	for (int a = 0; a < Us.length(); a++)
+	{
+		UVs.u = Us[a];
+		UVs.v = Vs[a];
+		geometry.texCoords.push_back(UVs);
+	}
+
+	MItMeshPolygon itFaces(mesh.dagPath());
+	while (!itFaces.isDone()) {
+		Face tempface;
+		int vc = itFaces.polygonVertexCount();
+
+		for (int i = 0; i < vc; ++i)
+		{
+			tempface.verts[i].pointID = itFaces.vertexIndex(i);
+			tempface.verts[i].normalID = itFaces.normalIndex(i);
+			itFaces.getUVIndex(i, tempface.verts[i].texCoordID, &uvSets[0]);
+		}
+
+		geometry.faces.push_back(tempface);
+		itFaces.next();
+	}
+	
 	return geometry;
+}
+
+void extractColor(MFnLambertShader& fn, Material& mat)
+{
+	MPlug p;
+
+	p = fn.findPlug("colorR");
+	p.getValue(mat.diffColor[0]);
+	p = fn.findPlug("colorG");
+	p.getValue(mat.diffColor[1]);
+	p = fn.findPlug("colorB");
+	p.getValue(mat.diffColor[2]);
+	p = fn.findPlug("colorA");
+	p.getValue(mat.diffColor[3]);
+	p = fn.findPlug("color");
+
+	MPlugArray connections;
+	p.connectedTo(connections, true, false);
+
+	for (int i = 0; i != connections.length(); ++i)
+	{
+		if (connections[i].node().apiType() == MFn::kFileTexture)
+		{
+			MFnDependencyNode fnDep(connections[i].node());
+			MPlug filename = fnDep.findPlug("ftn");
+			mat.diffuseTexture = filename.asString().asChar();
+			break;
+		}
+	}
 }
 
 Material ExtractMaterial(MFnMesh &meshDag)
 {
 	Material material;
+	MObjectArray shaders;
+	MIntArray shaderindices;
+	meshDag.getConnectedShaders(0, shaders, shaderindices);
 
+	MObject shader;
+	int t = shaders.length();
 
+	for (int i = 0; i < t; i++) {
+		MPlugArray connections;
+		MFnDependencyNode shaderGroup(shaders[i]);
+		MPlug shaderPlug = shaderGroup.findPlug("surfaceShader");
+		shaderPlug.connectedTo(connections, true, false);
+		for (uint u = 0; u < connections.length(); u++)
+		{
+			shader = connections[u].node();
+			if (shader.hasFn(MFn::kLambert))
+			{
+				MFnLambertShader fn(shader);
+				MPlug p;
 
+				p = fn.findPlug("colorR");
+				p.getValue(material.diffColor[0]);
+				p = fn.findPlug("colorG");
+				p.getValue(material.diffColor[1]);
+				p = fn.findPlug("colorB");
+				p.getValue(material.diffColor[2]);
+				p = fn.findPlug("colorA");
+				p.getValue(material.diffColor[3]);
+				p = fn.findPlug("color");
+
+				MPlugArray connections;
+				p.connectedTo(connections, true, false);
+
+				for (int i = 0; i != connections.length(); ++i)
+				{
+					if (connections[i].node().apiType() == MFn::kFileTexture)
+					{
+						MFnDependencyNode fnDep(connections[i].node());
+						MPlug filename = fnDep.findPlug("ftn");
+						material.diffuseTexture = filename.asString().asChar();
+						break;
+					}
+				}
+
+				p = fn.findPlug("specularColorR");
+				p.getValue(material.specColor[0]);
+				p = fn.findPlug("specularColorG");
+				p.getValue(material.specColor[1]);
+				p = fn.findPlug("specularColorB");
+				p.getValue(material.specColor[2]);
+				p = fn.findPlug("specularColorA");
+				p.getValue(material.specColor[3]);
+				p = fn.findPlug("specularColor");
+
+				p.connectedTo(connections, true, false);
+
+				for (int i = 0; i != connections.length(); ++i)
+				{
+					if (connections[i].node().apiType() == MFn::kFileTexture)
+					{
+						MFnDependencyNode fnDep(connections[i].node());
+						MPlug filename = fnDep.findPlug("ftn");
+						material.specularTexture = filename.asString().asChar();
+						break;
+					}
+				}
+			}
+		}
+	}
 
 	return material;
 }
