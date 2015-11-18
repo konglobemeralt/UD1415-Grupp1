@@ -132,13 +132,18 @@ void deleteUI()
 
 void ExportFinder(bool sl)
 {
-	MGlobal::displayInfo("Pretending To Export Selected!!");
 
 	MStringArray scene;
 	if (sl)
+	{
 		MGlobal::executeCommand("ls -sl", scene);
+		MGlobal::displayInfo("Pretending To Export Selected!!");
+	}
 	else
+	{
 		MGlobal::executeCommand("ls", scene);
+		MGlobal::displayInfo("Pretending To Export Everything!!");
+	}
 
 	MDagPath dag_path;
 	MItDag dag_iter(MItDag::kBreadthFirst, MFn::kMesh);
