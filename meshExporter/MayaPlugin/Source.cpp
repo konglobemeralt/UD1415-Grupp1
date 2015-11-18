@@ -123,7 +123,7 @@ void initUI()
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Everything"" -command ""exportAll"";");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Selected"" -command ""exportSelected"";");
 	MGlobal::executeCommand("showWindow;;");
-	MGlobal::executeCommand("window -e -wh 200 100 ""meshExporterUI"";");
+	MGlobal::executeCommand("window -e -wh 200 100 ""meshExporterUI"";"); //window resize
 
 	
 	MGlobal::displayInfo("UI created");
@@ -135,7 +135,7 @@ void deleteUI()
 	MGlobal::displayInfo("UI deleted");
 }
 
-void ExportFinder(bool sl)
+void ExportFinder(bool sl)//sl(selected) sätts genom knapparnas call till ExportFinder
 {
 
 	MStringArray scene;
@@ -150,6 +150,7 @@ void ExportFinder(bool sl)
 		MGlobal::displayInfo("Pretending To Export Everything!!");
 	}
 
+	//hitta alla meshes i scenen, kolla mot objekt i listan och om de ligger på toppnivå. Kalla ExportMesh på alla som klarar
 	MDagPath dag_path;
 	MItDag dag_iter(MItDag::kBreadthFirst, MFn::kMesh);
 	while (!dag_iter.isDone())
@@ -181,6 +182,7 @@ void ExtractLights(MFnMesh &meshDag, Geometry &geometry)
 
 Geometry ExtractGeometry(MFnMesh &mesh)
 {
+	//samlar data om geometrin och sparar i ett Geometryobjekt
 	Geometry geometry;
 	ExtractLights(mesh, geometry);
 	MSpace::Space world_space = MSpace::kTransform;
@@ -188,9 +190,9 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 	MFloatPointArray points;
 	MFloatVectorArray normals;
 
-	MGlobal::executeCommand(MString("polyTriangulate -ch 1 " + mesh.name()));
-	mesh.getPoints(points, world_space);
+	MGlobal::executeCommand(MString("polyTriangulate -ch 1 " + mesh.name()));//TODO - Bör dra från origmesh eller göra en undo
 
+	mesh.getPoints(points, world_space);
 	for (int i = 0; i < points.length(); i++)
 	{
 		Point temppoints = { points[i].x, points[i].y, points[i].z };
@@ -198,14 +200,12 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 	}
 
 	mesh.getNormals(normals, world_space);
-
 	for (int i = 0; i < normals.length(); i++)
 	{
 		Normal tempnormals = { normals[i].x, normals[i].y, normals[i].z };
 		geometry.normals.push_back(tempnormals);
 	}
 
-	//variabler för att mellanlagra uvdata och tangenter/bitangenter
 	MStringArray uvSets;
 	mesh.getUVSetNames(uvSets);
 
@@ -244,13 +244,13 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 Material ExtractMaterial(MFnMesh &meshDag)
 {
 	Material material;
+
+	//hittar alla kopplade surfaceShaders och samlar diffuse och specular(om tillgängligt) färg samt texturfilsnamn
 	MObjectArray shaders;
 	MIntArray shaderindices;
 	meshDag.getConnectedShaders(0, shaders, shaderindices);
-
 	MObject shader;
 	int t = shaders.length();
-
 	for (int i = 0; i < t; i++) {
 		MPlugArray connections;
 		MFnDependencyNode shaderGroup(shaders[i]);
@@ -339,17 +339,16 @@ Material ExtractMaterial(MFnMesh &meshDag)
 						break;
 					}
 				}
-				material.specColor[0] = -1;
+				material.specColor[0] = -1;//Materialet har ingen specularkanal
 			}
 		}
 	}
-
 	return material;
 }
 
 bool ExportMesh(MFnDagNode &primaryMeshDag)
 {
-
+	//Exporterar en mesh och alla dess submeshes. Testar alla subs att deras parent är primaryMesh
 	MGlobal::displayInfo(MString("Extracting Primary Mesh " + primaryMeshDag.name()));
 
 	MFnMesh meshFN(primaryMeshDag.child(0));
@@ -357,7 +356,6 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 	primaryMesh.Name = primaryMeshDag.name().asChar();
 	primaryMesh.geometry = ExtractGeometry(meshFN);
 	primaryMesh.material = ExtractMaterial(meshFN);
-
 	//skeletonID?
 
 	MItDag subMeshes(MItDag::kBreadthFirst, MFn::kMesh);
@@ -388,7 +386,7 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 		subMeshes.next();
 	}
 
-	ExportFile(primaryMesh, "C:/New folder/" + primaryMesh.Name + ".bin");
+	ExportFile(primaryMesh, "C:/New folder/" + primaryMesh.Name + ".bin");//Kanske ha en dialog i fönstret?
 	return false;
 
 
@@ -396,6 +394,7 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 
 void ExportFile(Mesh &mesh, std::string path)
 {
+	//kolla its för dokumentation
 	std::ofstream outfile;
 	outfile.open(path.c_str(), std::ofstream::binary);
 	MainHeader mainHeader;
