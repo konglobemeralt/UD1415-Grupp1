@@ -201,6 +201,9 @@ Material ExtractMaterial(MFnMesh &meshDag)
 
 bool ExportMesh(MFnDagNode &primaryMeshDag)
 {
+
+	MGlobal::displayInfo(MString("Extracting Primary Mesh " + primaryMeshDag.name()));
+
 	MFnMesh meshFN(primaryMeshDag.object());
 	Mesh primaryMesh;
 	primaryMesh.Name = primaryMeshDag.name().asChar();
@@ -221,14 +224,10 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 			MFnDagNode transform = dag_node.parent(0);
 			MFnDagNode parentPath(transform.parent(0));
 
-
-			MGlobal::displayInfo(parentPath.fullPathName());
-			MGlobal::displayInfo(primaryMeshDag.fullPathName());
-
 			if (!strcmp(parentPath.fullPathName().asChar(), primaryMeshDag.fullPathName().asChar()))
 				if (!dag_node.isIntermediateObject())
 					{
-						MGlobal::displayInfo(dag_node.name());
+						MGlobal::displayInfo(MString("Extracting subMesh " + dag_node.name()));
 
 						MFnMesh subMeshFN;
 						SubMesh subMesh;
@@ -236,7 +235,6 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 						subMesh.geometry = ExtractGeometry(subMeshFN);
 
 						primaryMesh.subMeshes.push_back(subMesh);
-
 					}
 		}
 		subMeshes.next();
