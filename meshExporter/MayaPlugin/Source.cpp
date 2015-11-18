@@ -240,35 +240,6 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 	return geometry;
 }
 
-void extractColor(MFnLambertShader& fn, Material& mat)
-{
-	MPlug p;
-
-	p = fn.findPlug("colorR");
-	p.getValue(mat.diffColor[0]);
-	p = fn.findPlug("colorG");
-	p.getValue(mat.diffColor[1]);
-	p = fn.findPlug("colorB");
-	p.getValue(mat.diffColor[2]);
-	p = fn.findPlug("colorA");
-	p.getValue(mat.diffColor[3]);
-	p = fn.findPlug("color");
-
-	MPlugArray connections;
-	p.connectedTo(connections, true, false);
-
-	for (int i = 0; i != connections.length(); ++i)
-	{
-		if (connections[i].node().apiType() == MFn::kFileTexture)
-		{
-			MFnDependencyNode fnDep(connections[i].node());
-			MPlug filename = fnDep.findPlug("ftn");
-			mat.diffuseTexture = filename.asString().asChar();
-			break;
-		}
-	}
-}
-
 Material ExtractMaterial(MFnMesh &meshDag)
 {
 	Material material;
@@ -287,9 +258,9 @@ Material ExtractMaterial(MFnMesh &meshDag)
 		for (uint u = 0; u < connections.length(); u++)
 		{
 			shader = connections[u].node();
-			if (shader.hasFn(MFn::kLambert))
+			if (shader.hasFn(MFn::kBlinn))
 			{
-				MFnLambertShader fn(shader);
+				MFnBlinnShader fn(shader);
 				MPlug p;
 
 				p = fn.findPlug("colorR");
@@ -339,6 +310,36 @@ Material ExtractMaterial(MFnMesh &meshDag)
 					}
 				}
 			}
+			else if(shader.hasFn(MFn::kLambert))
+			{
+				MFnLambertShader fn(shader);
+				MPlug p;
+
+				p = fn.findPlug("colorR");
+				p.getValue(material.diffColor[0]);
+				p = fn.findPlug("colorG");
+				p.getValue(material.diffColor[1]);
+				p = fn.findPlug("colorB");
+				p.getValue(material.diffColor[2]);
+				p = fn.findPlug("colorA");
+				p.getValue(material.diffColor[3]);
+				p = fn.findPlug("color");
+
+				MPlugArray connections;
+				p.connectedTo(connections, true, false);
+
+				for (int i = 0; i != connections.length(); ++i)
+				{
+					if (connections[i].node().apiType() == MFn::kFileTexture)
+					{
+						MFnDependencyNode fnDep(connections[i].node());
+						MPlug filename = fnDep.findPlug("ftn");
+						material.diffuseTexture = filename.asString().asChar();
+						break;
+					}
+				}
+				material.specColor[0] = -1;
+			}
 		}
 	}
 
@@ -350,7 +351,7 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 
 	MGlobal::displayInfo(MString("Extracting Primary Mesh " + primaryMeshDag.name()));
 
-	MFnMesh meshFN(primaryMeshDag.object());
+	MFnMesh meshFN(primaryMeshDag.child(0));
 	Mesh primaryMesh;
 	primaryMesh.Name = primaryMeshDag.name().asChar();
 	primaryMesh.geometry = ExtractGeometry(meshFN);
@@ -375,7 +376,7 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 					{
 						MGlobal::displayInfo(MString("Extracting subMesh " + dag_node.name()));
 
-						MFnMesh subMeshFN;
+						MFnMesh subMeshFN(dag_path);
 						SubMesh subMesh;
 						subMesh.Name = dag_node.name().asChar();
 						subMesh.geometry = ExtractGeometry(subMeshFN);
