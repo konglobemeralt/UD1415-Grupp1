@@ -29,12 +29,10 @@ struct Face
 	Vertex verts[3];
 };
 
-struct Geometry
+struct Material
 {
-	std::vector<Point> points;
-	std::vector<Normal> normals;
-	std::vector<TexCoord> texCoords;
-	std::vector<Face> faces;
+	float diffColor[4], specColor[4];
+	std::string diffuseTexture, specularTexture;
 };
 
 struct PointLight
@@ -47,10 +45,20 @@ struct SpotLight
 	float pos[3], col[3], intensity, angle, direction[3], dropoff;
 };
 
-struct SubMesh
+struct Geometry
 {
+	std::vector<Point> points;
+	std::vector<Normal> normals;
+	std::vector<TexCoord> texCoords;
+	std::vector<Face> faces;
+
 	std::vector<PointLight> pointLights;
 	std::vector<SpotLight> spotLights;
+};
+
+struct SubMesh
+{
+	std::string Name;
 	Geometry geometry;
 };
 
@@ -59,11 +67,6 @@ struct Mesh
 	std::string Name;
 	int skeletonID;
 	std::vector<SubMesh> subMeshes;
-	std::vector<PointLight> pointLights;
-	std::vector<SpotLight> spotLights;
 	Geometry geometry;
-
-	float diffColor[4], specColor[4];
-	std::string diffuseTexture, specularTexture;
-
+	Material material;
 };

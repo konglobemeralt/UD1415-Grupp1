@@ -170,18 +170,41 @@ void ExportFinder(bool sl)
 	}
 }
 
-void Export();
+void ExtractLights(MFnDagNode &meshDag, Geometry &geometry)
+{
 
+}
+
+Geometry ExtractGeometry(MFnDagNode &meshDag)
+{
+	Geometry geometry;
+	ExtractLights(meshDag, geometry);
+
+
+
+
+	return geometry;
+}
+
+Material ExtractMaterial(MFnDagNode &meshDag)
+{
+	Material material;
+
+
+
+
+	return material;
+}
 
 bool ExportMesh(MFnDagNode &primaryMeshDag)
 {
 
 	Mesh primaryMesh;
+	primaryMesh.Name = primaryMeshDag.name().asChar();
+	primaryMesh.geometry = ExtractGeometry(primaryMeshDag);
+	primaryMesh.material = ExtractMaterial(primaryMeshDag);
 
-
-
-
-
+	//skeletonID?
 
 	MItDag subMeshes(MItDag::kBreadthFirst, MFn::kMesh);
 	subMeshes.reset(primaryMeshDag.object(), MItDag::kBreadthFirst, MFn::kMesh);
@@ -204,15 +227,11 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 					{
 						MGlobal::displayInfo(dag_node.name());
 
-						//submesh export
+						SubMesh subMesh;
+						subMesh.Name = dag_node.name().asChar();
+						subMesh.geometry = ExtractGeometry(dag_node);
 
-
-
-
-
-
-
-
+						primaryMesh.subMeshes.push_back(subMesh);
 
 					}
 		}
