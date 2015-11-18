@@ -70,3 +70,19 @@ struct Mesh
 	Geometry geometry;
 	Material material;
 };
+
+//Headers-------------
+
+
+struct MainHeader {
+	int version, meshCount;
+};
+
+struct MeshHeader
+{
+	int nameLength, numberPoints, numberNormals, numberCoords, numberFaces, subMeshID, numberPointLights, numberSpotLights;
+};
+
+struct MatHeader {
+	int diffuseNameLength, specularNameLength;
+};

@@ -21,6 +21,7 @@ void ExtractLights(MFnMesh &mesh, Geometry &geometry);
 Geometry ExtractGeometry(MFnMesh &mesh);
 Material ExtractMaterial(MFnMesh &mesh);
 bool ExportMesh(MFnDagNode &primaryMeshDag);
+void ExportFile(Mesh &mesh, std::string path);
 
 class exportAll : public MPxCommand
 {
@@ -387,7 +388,84 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 		subMeshes.next();
 	}
 
+	ExportFile(primaryMesh, "C:/New folder/" + primaryMesh.Name + ".bin");
 	return false;
 
 
+}
+
+void ExportFile(Mesh &mesh, std::string path)
+{
+	std::ofstream outfile;
+	outfile.open(path.c_str(), std::ofstream::binary);
+	MainHeader mainHeader;
+	mainHeader.version = 2.2;
+	mainHeader.meshCount = mesh.subMeshes.size();
+
+
+	outfile.write((const char*)&mainHeader, sizeof(MainHeader));
+
+	MeshHeader meshHeader;
+	meshHeader.nameLength = mesh.Name.length();
+	meshHeader.numberPoints = mesh.geometry.points.size();
+	meshHeader.numberNormals = mesh.geometry.normals.size();
+	meshHeader.numberCoords = mesh.geometry.texCoords.size();
+	meshHeader.numberFaces = mesh.geometry.faces.size();
+	meshHeader.subMeshID = -1;
+	meshHeader.numberPointLights = mesh.geometry.pointLights.size();
+	meshHeader.numberSpotLights = mesh.geometry.spotLights.size();
+	outfile.write((const char*)&meshHeader, sizeof(MeshHeader));
+
+	outfile.write((const char*)mesh.Name.data(), meshHeader.nameLength);
+	outfile.write((const char*)mesh.geometry.points.data(), meshHeader.numberPoints*sizeof(Point));
+	outfile.write((const char*)mesh.geometry.normals.data(), meshHeader.numberNormals*sizeof(Normal));
+	outfile.write((const char*)mesh.geometry.texCoords.data(), meshHeader.numberCoords*sizeof(TexCoord));
+
+	for (int a = 0; a < meshHeader.numberFaces; a++) {
+		for (int b = 0; b < 3; b++) {
+			outfile.write((const char*)&mesh.geometry.faces[a].verts[b].pointID, 4);
+			outfile.write((const char*)&mesh.geometry.faces[a].verts[b].normalID, 4);
+			outfile.write((const char*)&mesh.geometry.faces[a].verts[b].texCoordID, 4);
+		}
+	}
+
+	for (int i = 0; i < mainHeader.meshCount; i++) {
+
+		MeshHeader meshHeader;
+		meshHeader.nameLength = mesh.Name.length();
+		meshHeader.numberPoints = mesh.subMeshes[i].geometry.points.size();
+		meshHeader.numberNormals = mesh.subMeshes[i].geometry.normals.size();
+		meshHeader.numberCoords = mesh.subMeshes[i].geometry.texCoords.size();
+		meshHeader.numberFaces = mesh.subMeshes[i].geometry.faces.size();
+		meshHeader.subMeshID = i;
+		meshHeader.numberPointLights = mesh.subMeshes[i].geometry.pointLights.size();
+		meshHeader.numberSpotLights = mesh.subMeshes[i].geometry.spotLights.size();
+		outfile.write((const char*)&meshHeader, sizeof(MeshHeader));
+
+		outfile.write((const char*)mesh.subMeshes[i].Name.data(), meshHeader.nameLength);
+		outfile.write((const char*)mesh.subMeshes[i].geometry.points.data(), meshHeader.numberPoints*sizeof(Point));
+		outfile.write((const char*)mesh.subMeshes[i].geometry.normals.data(), meshHeader.numberNormals*sizeof(Normal));
+		outfile.write((const char*)mesh.subMeshes[i].geometry.texCoords.data(), meshHeader.numberCoords*sizeof(TexCoord));
+
+		for (int a = 0; a < meshHeader.numberFaces; a++) {
+			for (int b = 0; b < 3; b++) {
+				outfile.write((const char*)&mesh.subMeshes[i].geometry.faces[a].verts[b].pointID, 4);
+				outfile.write((const char*)&mesh.subMeshes[i].geometry.faces[a].verts[b].normalID, 4);
+				outfile.write((const char*)&mesh.subMeshes[i].geometry.faces[a].verts[b].texCoordID, 4);
+			}
+		}
+	}
+
+	MatHeader matHeader;
+	matHeader.diffuseNameLength = mesh.material.diffuseTexture.length();
+	matHeader.specularNameLength = mesh.material.specularTexture.length();
+	outfile.write((const char*)&matHeader, sizeof(MatHeader));
+
+	outfile.write((const char*)&mesh.material.diffColor, 16);
+	outfile.write((const char*)mesh.material.diffuseTexture.data(), matHeader.diffuseNameLength);
+
+	outfile.write((const char*)&mesh.material.specColor, 16);
+	outfile.write((const char*)mesh.material.specularTexture.data(), matHeader.specularNameLength);
+
+	outfile.close();
 }
