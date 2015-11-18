@@ -10,8 +10,11 @@
 using namespace DirectX;
 using namespace std;
 
+//UI
 void initUI();
+void deleteUI();
 
+//export
 void ExportEverything();
 void ExportSelected();
 bool ExportMesh(MFnMesh &mesh);
@@ -101,6 +104,8 @@ EXPORT MStatus uninitializePlugin(MObject obj)
 	status = plugin.deregisterCommand("exportAll");
 	status = plugin.deregisterCommand("exportSelected");
 
+	deleteUI();
+	
 	MGlobal::displayInfo("Maya plugin unloaded!!");
 
 	return MS::kSuccess;
@@ -109,13 +114,19 @@ EXPORT MStatus uninitializePlugin(MObject obj)
 
 void initUI()
 {
-
-	MGlobal::executeCommand("window -title ""MeshExporter"" -w 300 -h 300;");
-	MGlobal::executeCommand("columnLayout;");
+	MGlobal::executeCommand("window -rtf true -s false -title ""MeshExporter"" ""meshExporterUI"";");
+	MGlobal::executeCommand("columnLayout -columnAttach ""both"" 5 -rowSpacing 5 -columnWidth 100;;");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Everything"" -command ""exportAll"";");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Selected"" -command ""exportSelected"";");
 	MGlobal::executeCommand("showWindow;;");
+	
+	MGlobal::displayInfo("UI created");
+}
 
+void deleteUI()
+{
+	MGlobal::executeCommand("deleteUI -window ""meshExporterUI"";");
+	MGlobal::displayInfo("UI deleted");
 }
 
 void ExportEverything()
