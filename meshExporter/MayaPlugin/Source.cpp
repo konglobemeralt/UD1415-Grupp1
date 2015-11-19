@@ -461,7 +461,7 @@ void ExportFile(Mesh &mesh, std::string path)
 	outfile.write((const char*)&mainHeader, sizeof(MainHeader));
 
 	MeshHeader meshHeader;
-	meshHeader.nameLength = mesh.Name.length();
+	meshHeader.nameLength = mesh.Name.length()+1;
 	meshHeader.numberPoints = mesh.geometry.points.size();
 	meshHeader.numberNormals = mesh.geometry.normals.size();
 	meshHeader.numberCoords = mesh.geometry.texCoords.size();

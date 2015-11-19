@@ -165,7 +165,7 @@ void D3D::Create()
 		mesh.geometry.points.resize(meshHeader.numberPoints);
 		mesh.geometry.normals.resize(meshHeader.numberNormals);
 		mesh.geometry.texCoords.resize(meshHeader.numberCoords);
-		infile.read((char*)mesh.Name.data(), meshHeader.nameLength + 1);
+		infile.read((char*)mesh.Name.data(), meshHeader.nameLength);
 		infile.read((char*)mesh.geometry.points.data(), meshHeader.numberPoints * sizeof(Point));
 		infile.read((char*)mesh.geometry.normals.data(), meshHeader.numberNormals * sizeof(Normal));
 		infile.read((char*)mesh.geometry.texCoords.data(), meshHeader.numberCoords * sizeof(TexCoord));
@@ -188,26 +188,26 @@ void D3D::Create()
 		// TEST TO PUT THE OBJERCT TOGHETER
 
 
-		//// Indices
-		//D3D11_BUFFER_DESC cbDesc;
-		//cbDesc.ByteWidth = sizeof(int) * 6;
-		//cbDesc.Usage = D3D11_USAGE_DYNAMIC;
-		//cbDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		//cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		//cbDesc.MiscFlags = 0;
-		//cbDesc.StructureByteStride = 0;
+		// Indices
+		D3D11_BUFFER_DESC cbDesc;
+		cbDesc.ByteWidth = sizeof(int) * 6;
+		cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+		cbDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		cbDesc.MiscFlags = 0;
+		cbDesc.StructureByteStride = 0;
 
-		//D3D11_SUBRESOURCE_DATA cbInitData;
-		//cbInitData.pSysMem = meshes.back().indices.data();
-		//cbInitData.SysMemPitch = 0;
-		//cbInitData.SysMemSlicePitch = 0;
-		//device->CreateBuffer(&cbDesc, &cbInitData, &meshes.back().meshesBuffer[0]);
+		D3D11_SUBRESOURCE_DATA cbInitData;
+		cbInitData.pSysMem = meshes.back().indices.data();
+		cbInitData.SysMemPitch = 0;
+		cbInitData.SysMemSlicePitch = 0;
+		device->CreateBuffer(&cbDesc, &cbInitData, &meshes.back().meshesBuffer[0]);
 
-		//// Vertices
-		//meshes.back().meshesBuffer[1] = CreateMesh(sizeof(XMFLOAT3) * 4, meshes.back().pos.data(), 4);
+		// Vertices
+		meshes.back().meshesBuffer[1] = CreateMesh(sizeof(XMFLOAT3) * 4, meshes.back().pos.data(), 4);
 
-		//// Transform
-		//meshes.back().transformBuffer = CreateConstantBuffer(sizeof(XMFLOAT4X4), &meshes.back().transform);
+		// Transform
+		meshes.back().transformBuffer = CreateConstantBuffer(sizeof(XMFLOAT4X4), &meshes.back().transform);
 	}
 }
 

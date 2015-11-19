@@ -181,6 +181,8 @@ public:
 	struct MatHeader {
 		int diffuseNameLength, specularNameLength;
 	};
+
+	ID3D11Buffer* meshesBuffer[4];
 };
 
 #endif
