@@ -222,7 +222,9 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 		geometry.texCoords.push_back(UVs);
 	}
 
-	MItMeshPolygon itFaces(mesh.dagPath());
+	MStatus stat;
+
+	MItMeshPolygon itFaces(mesh.object(), &stat);
 	while (!itFaces.isDone()) {
 		Face tempface;
 		int vc = itFaces.polygonVertexCount();
