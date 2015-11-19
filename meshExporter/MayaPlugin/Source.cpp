@@ -404,6 +404,7 @@ void ExportFile(Mesh &mesh, std::string path)
 
 	outfile.write((const char*)&mainHeader, sizeof(MainHeader));
 
+	//finding sizes of main mesh contents in header
 	MeshHeader meshHeader;
 	meshHeader.nameLength = mesh.Name.length()+1;
 	meshHeader.numberPoints = mesh.geometry.points.size();
@@ -413,8 +414,9 @@ void ExportFile(Mesh &mesh, std::string path)
 	meshHeader.subMeshID = -1;
 	meshHeader.numberPointLights = mesh.geometry.pointLights.size();
 	meshHeader.numberSpotLights = mesh.geometry.spotLights.size();
-	outfile.write((const char*)&meshHeader, sizeof(MeshHeader));
+	outfile.write((const char*)&meshHeader, sizeof(MeshHeader)); //writing the sizes found in the main mesh header
 
+	//writing the main mesh contents to file according to the sizes of main mesh header
 	outfile.write((const char*)mesh.Name.data(), meshHeader.nameLength);
 	outfile.write((const char*)mesh.geometry.points.data(), meshHeader.numberPoints*sizeof(Point));
 	outfile.write((const char*)mesh.geometry.normals.data(), meshHeader.numberNormals*sizeof(Normal));
@@ -430,6 +432,7 @@ void ExportFile(Mesh &mesh, std::string path)
 
 	for (int i = 0; i < mainHeader.meshCount; i++) {
 
+		//finding sizes of submesh contents in header
 		MeshHeader meshHeader;
 		meshHeader.nameLength = mesh.Name.length();
 		meshHeader.numberPoints = mesh.subMeshes[i].geometry.points.size();
@@ -439,8 +442,9 @@ void ExportFile(Mesh &mesh, std::string path)
 		meshHeader.subMeshID = i;
 		meshHeader.numberPointLights = mesh.subMeshes[i].geometry.pointLights.size();
 		meshHeader.numberSpotLights = mesh.subMeshes[i].geometry.spotLights.size();
-		outfile.write((const char*)&meshHeader, sizeof(MeshHeader));
-
+		outfile.write((const char*)&meshHeader, sizeof(MeshHeader));//writing the sizes found in the submesh header
+	
+		//writing the submesh contents to file according to the sizes of main mesh header
 		outfile.write((const char*)mesh.subMeshes[i].Name.data(), meshHeader.nameLength);
 		outfile.write((const char*)mesh.subMeshes[i].geometry.points.data(), meshHeader.numberPoints*sizeof(Point));
 		outfile.write((const char*)mesh.subMeshes[i].geometry.normals.data(), meshHeader.numberNormals*sizeof(Normal));
