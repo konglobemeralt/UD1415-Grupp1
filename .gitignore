@@ -4,9 +4,69 @@
 *.o
 *.obj
 
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+*_i.c
+*_p.c
+*_i.h
+*.ilk
+*.meta
+*.pch
+*.pdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+*.opensdf
+*.cso
+*.idb
+*.exp
+
+# Visual C++ cache files
+ipch/
+*.aps
+*.ncb
+*.opensdf
+*.sdf
+*.cachefile
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
 # Precompiled Headers
 *.gch
 *.pch
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
 
 # Compiled Dynamic libraries
 *.so
@@ -26,18 +86,11 @@
 *.exe
 *.out
 *.app
-meshExporter/MayaPlugin.opensdf
-meshExporter/MayaPlugin.sdf
-meshExporter/MayaPlugin/x64/Debug/MayaPlugin.log
-meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/cl.command.1.tlog
-meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/CL.read.1.tlog
-meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/CL.write.1.tlog
-meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/link.command.1.tlog
-meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/link.read.1.tlog
-meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/link.write.1.tlog
-meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/MayaPlugin.lastbuildstate
-meshExporter/MayaPlugin/x64/Debug/MayaPlugin.tlog/MayaPlugin.write.1u.tlog
-meshExporter/MayaPlugin/x64/Debug/vc140.pdb
-meshExporter/x64/Debug/MayaPlugin.exp
-meshExporter/x64/Debug/MayaPlugin.ilk
-meshExporter/x64/Debug/MayaPlugin.pdb
+
+# Logs
+*.tlog
+*.log
+
+# SQL Server files
+*.mdf
+*.ldf
