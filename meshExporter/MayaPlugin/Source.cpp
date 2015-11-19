@@ -251,14 +251,14 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 	mesh.getPoints(points, world_space);
 	for (int i = 0; i < points.length(); i++)
 	{
-		Point temppoints = { points[i].x, points[i].y, points[i].z };
+		Point temppoints = { points[i].x, points[i].y, -points[i].z };
 		geometry.points.push_back(temppoints);
 	}
 
 	mesh.getNormals(normals, world_space);
 	for (int i = 0; i < normals.length(); i++)
 	{
-		Normal tempnormals = { normals[i].x, normals[i].y, normals[i].z };
+		Normal tempnormals = { normals[i].x, normals[i].y, -normals[i].z };
 		geometry.normals.push_back(tempnormals);
 	}
 
@@ -274,7 +274,7 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 	for (int a = 0; a < Us.length(); a++)
 	{
 		UVs.u = Us[a];
-		UVs.v = Vs[a];
+		UVs.v = 1 - Vs[a];
 		geometry.texCoords.push_back(UVs);
 	}
 

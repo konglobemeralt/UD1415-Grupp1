@@ -60,34 +60,6 @@ public:
 		XMINT4 textureExist;
 		XMFLOAT4 materialColor;
 	};
-	struct MeshData
-	{
-		//VertexData* vertexData;
-		vector<int> indices;
-		vector<XMFLOAT3> pos;
-		vector<XMFLOAT2> uv;
-		vector<XMFLOAT3> normal;
-		vector<int> boneIndices;
-		vector<float> boneWeights;
-		unsigned int vertexCount;
-		XMFLOAT4X4 transform;
-		ID3D11Buffer* meshesBuffer[4];
-		ID3D11Buffer* transformBuffer;
-
-		//Material:
-		ID3D11Buffer* colorBuffer;
-		meshTexture meshTex;
-		ID3D11ShaderResourceView* meshTextures;
-
-		//Texture:
-		unsigned int textureSize;
-		char* texturePath;
-	};
-	vector<MeshData> meshes;
-	unsigned int localMesh;
-	unsigned int localVertex;
-	XMFLOAT3 vtxChanged;
-	unsigned int meshSize;
 
 	// CAMERA
 	XMFLOAT4X4* view;
@@ -182,7 +154,34 @@ public:
 		int diffuseNameLength, specularNameLength;
 	};
 
-	ID3D11Buffer* meshesBuffer[4];
+	struct MeshData
+	{
+		//VertexData* vertexData;
+		vector<int> indices;
+		vector<Point> pos;
+		vector<TexCoord> uv;
+		vector<Normal> normal;
+		vector<int> boneIndices;
+		vector<float> boneWeights;
+		unsigned int vertexCount;
+		XMFLOAT4X4 transform;
+		ID3D11Buffer* meshesBuffer[4];
+		ID3D11Buffer* transformBuffer;
+
+		//Material:
+		ID3D11Buffer* colorBuffer;
+		meshTexture meshTex;
+		ID3D11ShaderResourceView* meshTextures;
+
+		//Texture:
+		unsigned int textureSize;
+		char* texturePath;
+	};
+	vector<MeshData> meshes;
+	unsigned int localMesh;
+	unsigned int localVertex;
+	XMFLOAT3 vtxChanged;
+	unsigned int meshSize;
 };
 
 #endif

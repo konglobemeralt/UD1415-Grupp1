@@ -101,6 +101,21 @@ void D3D::Update()
 	//viewMatrix = CreateConstantBuffer(sizeof(XMFLOAT4X4), view);
 	//projectionMatrix = CreateConstantBuffer(sizeof(XMFLOAT4X4), projection);
 
+	//// Indices
+	//D3D11_BUFFER_DESC cbDesc;
+	//cbDesc.ByteWidth = sizeof(int) * 6;
+	//cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+	//cbDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	//cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	//cbDesc.MiscFlags = 0;
+	//cbDesc.StructureByteStride = 0;
+
+	//D3D11_SUBRESOURCE_DATA cbInitData;
+	//cbInitData.pSysMem = meshes.back().indices.data();
+	//cbInitData.SysMemPitch = 0;
+	//cbInitData.SysMemSlicePitch = 0;
+	//device->CreateBuffer(&cbDesc, &cbInitData, &meshes.back().meshesBuffer[0]);
+
 	createBool = true;
 }
 
@@ -120,17 +135,16 @@ void D3D::Render()
 	//unsigned int strides[3] = { 12, 8, 12 };
 	//unsigned int offsets[3] = { 0, 0, 0 };
 
-	unsigned int strides[1] = { 12 };
-	unsigned int offsets[1] = { 0 };
+	unsigned int strides[3] = { 12, 12, 8 };
+	unsigned int offsets[3] = { 0, 0, 0 };
 
 	for (size_t i = 0; i < meshes.size(); i++)
 	{
 		if (meshes[i].meshesBuffer[0] != NULL)
 		{
 			devcon->VSSetConstantBuffers(0, 1, &meshes[i].transformBuffer);
-			devcon->IASetIndexBuffer(meshes[i].meshesBuffer[0], DXGI_FORMAT_R32_UINT, 0);
-			devcon->IASetVertexBuffers(0, 1, &meshes[i].meshesBuffer[1], strides, offsets);
-			devcon->DrawIndexed(6, 0, 0);
+			devcon->IASetVertexBuffers(0, 3, meshes[i].meshesBuffer, strides, offsets);
+			devcon->Draw(meshes[i].pos.size(), 0);
 		}
 	}
 	swapChain->Present(0, 0);
@@ -186,27 +200,29 @@ void D3D::Create()
 		infile.close();
 
 		// TEST TO PUT THE OBJERCT TOGHETER
+		meshes.push_back(MeshData());
+		meshes.back().pos.resize(meshHeader.numberFaces * 3);
+		meshes.back().normal.resize(meshHeader.numberFaces * 3);
+		meshes.back().uv.resize(meshHeader.numberFaces * 3);
+		size_t index = 0;
+		for (size_t i = 0; i < meshHeader.numberFaces; i++){
+			for (size_t j = 0; j < 3; j++) {
+				meshes.back().pos[index] = mesh.geometry.points[mesh.geometry.faces[i].verts[j].pointID];
+				meshes.back().normal[index] = mesh.geometry.normals[mesh.geometry.faces[i].verts[j].normalID];
+				meshes.back().uv[index] = mesh.geometry.texCoords[mesh.geometry.faces[i].verts[j].texCoordID];
+				index++;
+			}
+		}
 
 
-		// Indices
-		D3D11_BUFFER_DESC cbDesc;
-		cbDesc.ByteWidth = sizeof(int) * 6;
-		cbDesc.Usage = D3D11_USAGE_DYNAMIC;
-		cbDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		cbDesc.MiscFlags = 0;
-		cbDesc.StructureByteStride = 0;
-
-		D3D11_SUBRESOURCE_DATA cbInitData;
-		cbInitData.pSysMem = meshes.back().indices.data();
-		cbInitData.SysMemPitch = 0;
-		cbInitData.SysMemSlicePitch = 0;
-		device->CreateBuffer(&cbDesc, &cbInitData, &meshes.back().meshesBuffer[0]);
 
 		// Vertices
-		meshes.back().meshesBuffer[1] = CreateMesh(sizeof(XMFLOAT3) * 4, meshes.back().pos.data(), 4);
+		meshes.back().meshesBuffer[0] = CreateMesh(sizeof(XMFLOAT3) * meshes.back().pos.size(), meshes.back().pos.data(), meshes.back().pos.size());
+		meshes.back().meshesBuffer[1] = CreateMesh(sizeof(XMFLOAT3) * meshes.back().normal.size(), meshes.back().normal.data(), meshes.back().normal.size());
+		meshes.back().meshesBuffer[2] = CreateMesh(sizeof(XMFLOAT2) * meshes.back().uv.size(), meshes.back().uv.data(), meshes.back().uv.size());
 
 		// Transform
+		DirectX::XMStoreFloat4x4(&meshes.back().transform, XMMatrixIdentity());
 		meshes.back().transformBuffer = CreateConstantBuffer(sizeof(XMFLOAT4X4), &meshes.back().transform);
 	}
 }
@@ -265,14 +281,14 @@ void D3D::CreateShaders()
 {
 	//create vertex shader
 	ID3DBlob* pVS = nullptr;
-	D3DCompileFromFile(L"VertexShaderAnimation.hlsl", NULL, NULL, "main", "vs_5_0", 0, NULL, &pVS, NULL);
+	D3DCompileFromFile(L"VertexShader.hlsl", NULL, NULL, "main", "vs_5_0", 0, NULL, &pVS, NULL);
 	device->CreateVertexShader(pVS->GetBufferPointer(), pVS->GetBufferSize(), nullptr, &vertexShader);
 
 	//create input layout (verified using vertex shader)
 	D3D11_INPUT_ELEMENT_DESC inputDesc[] = {
 		{ "SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "BLENDWEIGHTS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "BLENDINDICES", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 	device->CreateInputLayout(inputDesc, 3, pVS->GetBufferPointer(), pVS->GetBufferSize(), &inputLayout);
 	pVS->Release();
