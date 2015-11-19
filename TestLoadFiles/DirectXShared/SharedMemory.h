@@ -154,11 +154,15 @@ public:
 		int diffuseNameLength, specularNameLength;
 	};
 
+	struct Point2
+	{
+		float x, y, z;
+	};
 	struct MeshData
 	{
 		//VertexData* vertexData;
 		vector<int> indices;
-		vector<Point> pos;
+		vector<Point2> pos;
 		vector<TexCoord> uv;
 		vector<Normal> normal;
 		vector<int> boneIndices;

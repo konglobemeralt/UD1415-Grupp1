@@ -162,7 +162,7 @@ void D3D::Create()
 
 	// Load bin file
 	std::ifstream infile;
-	infile.open("C:/New folder/pCube1.bin", std::ifstream::binary);
+	infile.open("C:/New folder/pSphere1.bin", std::ifstream::binary);
 
 	if (infile)
 	{
@@ -187,9 +187,9 @@ void D3D::Create()
 		mesh.geometry.faces.resize(meshHeader.numberFaces);
 		for (size_t i = 0; i < meshHeader.numberFaces; i++){
 			for (size_t j = 0; j < 3; j++) {
-				infile.read((char*)mesh.geometry.faces[i].verts[j].pointID, 4);
-				infile.read((char*)mesh.geometry.faces[i].verts[j].normalID, 4);
-				infile.read((char*)mesh.geometry.faces[i].verts[j].texCoordID, 4);
+				infile.read((char*)&mesh.geometry.faces[i].verts[j].pointID, 4);
+				infile.read((char*)&mesh.geometry.faces[i].verts[j].normalID, 4);
+				infile.read((char*)&mesh.geometry.faces[i].verts[j].texCoordID, 4);
 			}
 		}
 
@@ -199,6 +199,8 @@ void D3D::Create()
 
 		infile.close();
 
+
+
 		// TEST TO PUT THE OBJERCT TOGHETER
 		meshes.push_back(MeshData());
 		meshes.back().pos.resize(meshHeader.numberFaces * 3);
@@ -207,14 +209,14 @@ void D3D::Create()
 		size_t index = 0;
 		for (size_t i = 0; i < meshHeader.numberFaces; i++){
 			for (size_t j = 0; j < 3; j++) {
-				meshes.back().pos[index] = mesh.geometry.points[mesh.geometry.faces[i].verts[j].pointID];
+				meshes.back().pos[index].x = mesh.geometry.points[mesh.geometry.faces[i].verts[j].pointID].x;
+				meshes.back().pos[index].y = mesh.geometry.points[mesh.geometry.faces[i].verts[j].pointID].y;
+				meshes.back().pos[index].z = mesh.geometry.points[mesh.geometry.faces[i].verts[j].pointID].z;
 				meshes.back().normal[index] = mesh.geometry.normals[mesh.geometry.faces[i].verts[j].normalID];
 				meshes.back().uv[index] = mesh.geometry.texCoords[mesh.geometry.faces[i].verts[j].texCoordID];
 				index++;
 			}
 		}
-
-
 
 		// Vertices
 		meshes.back().meshesBuffer[0] = CreateMesh(sizeof(XMFLOAT3) * meshes.back().pos.size(), meshes.back().pos.data(), meshes.back().pos.size());
@@ -287,8 +289,8 @@ void D3D::CreateShaders()
 	//create input layout (verified using vertex shader)
 	D3D11_INPUT_ELEMENT_DESC inputDesc[] = {
 		{ "SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 	device->CreateInputLayout(inputDesc, 3, pVS->GetBufferPointer(), pVS->GetBufferSize(), &inputLayout);
 	pVS->Release();

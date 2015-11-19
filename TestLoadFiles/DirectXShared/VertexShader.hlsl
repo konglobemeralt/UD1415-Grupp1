@@ -22,7 +22,7 @@ struct VS_IN
 struct VS_OUT
 {
 	float4 Pos : SV_POSITION;
-	float3 Normal : NORMAL;
+	float4 Normal : NORMAL;
 	float2 uv : TEXCOORD;
 };
 

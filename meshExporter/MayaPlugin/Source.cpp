@@ -182,63 +182,102 @@ void ExtractLights(MFnMesh &meshDag, Geometry &geometry)
 
 Geometry ExtractGeometry(MFnMesh &mesh)
 {
-	//samlar data om geometrin och sparar i ett Geometryobjekt
+	// Test without polytriangulate - MAYBE NOT WORKING
+	MItMeshPolygon itPoly(mesh.object());
 	Geometry geometry;
+	Face tempface;
 	ExtractLights(mesh, geometry);
-	MSpace::Space world_space = MSpace::kTransform;
 
-	MFloatPointArray points;
+	float2 uv;
+	MPointArray points;
+	MIntArray vertexList;
 	MFloatVectorArray normals;
+	mesh.getNormals(normals);
 
-	MGlobal::executeCommand(MString("polyTriangulate -ch 1 " + mesh.name()));//TODO - Bör dra från origmesh eller göra en undo
-
-	mesh.getPoints(points, world_space);
-	for (int i = 0; i < points.length(); i++)
+	while (!itPoly.isDone())
 	{
-		Point temppoints = { points[i].x, points[i].y, -points[i].z };
-		geometry.points.push_back(temppoints);
-	}
+		itPoly.getTriangles(points, vertexList);
 
-	mesh.getNormals(normals, world_space);
-	for (int i = 0; i < normals.length(); i++)
-	{
-		Normal tempnormals = { normals[i].x, normals[i].y, -normals[i].z };
-		geometry.normals.push_back(tempnormals);
-	}
-
-	MStringArray uvSets;
-	mesh.getUVSetNames(uvSets);
-
-	MFloatArray Us;
-	MFloatArray Vs;
-	TexCoord UVs;
-
-	MString currentSet = uvSets[0];
-	mesh.getUVs(Us, Vs, &currentSet);
-	for (int a = 0; a < Us.length(); a++)
-	{
-		UVs.u = Us[a];
-		UVs.v = 1 - Vs[a];
-		geometry.texCoords.push_back(UVs);
-	}
-
-	MStatus stat;
-
-	MItMeshPolygon itFaces(mesh.object(), &stat);
-	while (!itFaces.isDone()) {
-		Face tempface;
-		int vc = itFaces.polygonVertexCount();
-
-		for (int i = 0; i < vc; ++i)
+		for (size_t i = 0; i < points.length(); i++)
 		{
-			tempface.verts[i].pointID = itFaces.vertexIndex(i);
-			tempface.verts[i].normalID = itFaces.normalIndex(i);
-			itFaces.getUVIndex(i, tempface.verts[i].texCoordID, &uvSets[0]);
-		}
+			// Data
+			Point temppoints = { points[i].x, points[i].y, -points[i].z };
+			geometry.points.push_back(temppoints);
+			Normal tempnormals = { normals[itPoly.normalIndex(vertexList[i])].x, 
+				normals[itPoly.normalIndex(vertexList[i])].y, 
+				-normals[itPoly.normalIndex(vertexList[i])].z };
+			geometry.normals.push_back(tempnormals);
+			itPoly.getUVAtPoint(points[i], uv);
+			TexCoord UVs = {uv[0], 1 - uv[1]};
+			geometry.texCoords.push_back(UVs);
 
-		geometry.faces.push_back(tempface);
-		itFaces.next();
+			// Indices
+			tempface.verts[i].pointID = vertexList[i];
+			tempface.verts[i].normalID = itPoly.normalIndex(vertexList[i]);
+			itPoly.getUVIndex(vertexList[i], tempface.verts[i].texCoordID);
+			geometry.faces.push_back(tempface);
+		}
+		itPoly.next();
 	}
+
+
+	////samlar data om geometrin och sparar i ett Geometryobjekt
+	//
+	//ExtractLights(mesh, geometry);
+	//MSpace::Space world_space = MSpace::kTransform;
+
+	//MFloatPointArray points;
+	//MFloatVectorArray normals;
+
+	//MGlobal::executeCommand(MString("polyTriangulate -ch 1 " + mesh.name()));//TODO - Bör dra från origmesh eller göra en undo
+
+	//mesh.getPoints(points, world_space);
+	//for (int i = 0; i < points.length(); i++)
+	//{
+	//	Point temppoints = { points[i].x, points[i].y, -points[i].z };
+	//	geometry.points.push_back(temppoints);
+	//}
+
+	//mesh.getNormals(normals, world_space);
+	//for (int i = 0; i < normals.length(); i++)
+	//{
+	//	Normal tempnormals = { normals[i].x, normals[i].y, -normals[i].z };
+	//	geometry.normals.push_back(tempnormals);
+	//}
+
+	//MStringArray uvSets;
+	//mesh.getUVSetNames(uvSets);
+
+	//MFloatArray Us;
+	//MFloatArray Vs;
+	//TexCoord UVs;
+
+	//MString currentSet = uvSets[0];
+	//mesh.getUVs(Us, Vs, &currentSet);
+	//for (int a = 0; a < Us.length(); a++)
+	//{
+	//	UVs.u = Us[a];
+	//	UVs.v = 1 - Vs[a];
+	//	geometry.texCoords.push_back(UVs);
+	//}
+
+	//MStatus stat;
+
+	//MItMeshPolygon itFaces(mesh.object(), &stat);
+	//while (!itFaces.isDone()) {
+	//	Face tempface;
+	//	int vc = itFaces.polygonVertexCount();
+
+	//	for (int i = 0; i < vc; ++i)
+	//	{
+	//		tempface.verts[i].pointID = itFaces.vertexIndex(i);
+	//		tempface.verts[i].normalID = itFaces.normalIndex(i);
+	//		itFaces.getUVIndex(i, tempface.verts[i].texCoordID, &uvSets[0]);
+	//	}
+
+	//	geometry.faces.push_back(tempface);
+	//	itFaces.next();
+	//}
 	
 	return geometry;
 }
