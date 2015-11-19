@@ -343,7 +343,7 @@ Material ExtractMaterial(MFnMesh &meshDag)
 						break;
 					}
 				}
-
+				//eftersom lambert inte har någon specularkanal tillgängligt, söker endast blinn efter speculars
 				p = fn.findPlug("specularColorR");
 				p.getValue(material.specColor[0]);
 				p = fn.findPlug("specularColorG");
@@ -441,7 +441,7 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 		}
 		subMeshes.next();
 	}
-
+	//currently necessary to create this folder manually
 	ExportFile(primaryMesh, "C:/New folder/" + primaryMesh.Name + ".bin");//Kanske ha en dialog i fönstret?
 	return false;
 
@@ -457,7 +457,7 @@ void ExportFile(Mesh &mesh, std::string path)
 	mainHeader.version = 2.2;
 	mainHeader.meshCount = mesh.subMeshes.size();
 
-
+	//writing the main object (the parent)
 	outfile.write((const char*)&mainHeader, sizeof(MainHeader));
 
 	MeshHeader meshHeader;
@@ -483,7 +483,13 @@ void ExportFile(Mesh &mesh, std::string path)
 			outfile.write((const char*)&mesh.geometry.faces[a].verts[b].texCoordID, 4);
 		}
 	}
+	//writing lights connected to main mesh
+	if (meshHeader.numberPointLights)
+		outfile.write((char*)&mesh.geometry.pointLights[0], sizeof(PointLight)*meshHeader.numberPointLights);
+	if (meshHeader.numberSpotLights)
+		outfile.write((char*)&mesh.geometry.spotLights[0], sizeof(SpotLight)*meshHeader.numberSpotLights);
 
+	//writing the submeshes (the children)
 	for (int i = 0; i < mainHeader.meshCount; i++) {
 
 		MeshHeader meshHeader;
@@ -509,6 +515,7 @@ void ExportFile(Mesh &mesh, std::string path)
 				outfile.write((const char*)&mesh.subMeshes[i].geometry.faces[a].verts[b].texCoordID, 4);
 			}
 		}
+		//writing lights connected to currently written submesh
 		if(meshHeader.numberPointLights)
 		outfile.write((char*)&mesh.subMeshes[i].geometry.pointLights[0], sizeof(PointLight)*meshHeader.numberPointLights);
 		if(meshHeader.numberSpotLights)
