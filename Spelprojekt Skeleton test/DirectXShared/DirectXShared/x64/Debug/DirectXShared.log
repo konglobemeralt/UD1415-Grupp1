@@ -1,9 +1,0 @@
-﻿Build started 2015-11-06 12:09:22.
-     1>Project "D:\Group project\Group-project-level-editor\DirectXShared\DirectXShared\DirectXShared.vcxproj" on node 2 (Build target(s)).
-     1>Link:
-         DirectXShared.vcxproj -> D:\Group project\Group-project-level-editor\DirectXShared\x64\Debug\DirectXShared.exe
-     1>Done Building Project "D:\Group project\Group-project-level-editor\DirectXShared\DirectXShared\DirectXShared.vcxproj" (Build target(s)).
-
-Build succeeded.
-
-Time Elapsed 00:00:00.21
