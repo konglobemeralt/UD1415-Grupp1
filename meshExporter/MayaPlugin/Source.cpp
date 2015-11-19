@@ -118,13 +118,18 @@ EXPORT MStatus uninitializePlugin(MObject obj)
 
 void initUI()
 {
-	MGlobal::executeCommand("window -wh 200 100 -s false -title ""MeshExporter"" ""meshExporterUI"";");
-	MGlobal::executeCommand("columnLayout -columnAttach ""both"" 5 -rowSpacing 5 -columnWidth 100;;");
+	MGlobal::executeCommand("window -wh 250 105 -s true -title ""MeshExporter"" ""meshExporterUI"";");
+	MGlobal::executeCommand("columnLayout -columnAttach ""left"" 5 -rowSpacing 5 -columnWidth 100;;");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Everything"" -command ""exportAll"";");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Selected"" -command ""exportSelected"";");
-	MGlobal::executeCommand("showWindow;;");
-	MGlobal::executeCommand("window -e -wh 200 100 ""meshExporterUI"";"); //window resize
+	MGlobal::executeCommand("text -label ""ExportTo"";");
+	MGlobal::executeCommand("global string $filePathString;");
 
+	MGlobal::executeCommand("textField -w 200 -text ""DummyString"";");
+	MGlobal::executeCommand("textField -q $filePathString;");
+	MGlobal::executeCommand("print $filePathString;");
+	
+	MGlobal::executeCommand("showWindow;");
 	
 	MGlobal::displayInfo("UI created");
 }
