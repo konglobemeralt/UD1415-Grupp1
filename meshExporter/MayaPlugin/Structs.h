@@ -37,7 +37,7 @@ struct Material
 
 struct PointLight
 {
-	float pos[3], col[3], intensity, dropoff;
+	float pos[3], col[3], intensity;
 };
 
 struct SpotLight

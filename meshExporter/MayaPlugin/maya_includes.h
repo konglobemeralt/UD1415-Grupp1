@@ -27,6 +27,7 @@
 #include <maya/MFnPhongShader.h>
 #include <maya/MImage.h>
 #include <maya/MFnPointLight.h>
+#include <maya/MFnSpotLight.h>
 #include <maya/MSelectionList.h>
 #include <maya/MItDependencyNodes.h>
 #include <maya/MItMeshVertex.h>
