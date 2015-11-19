@@ -441,7 +441,7 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 		}
 		subMeshes.next();
 	}
-
+	//currently necessary to create this folder manually
 	ExportFile(primaryMesh, "C:/New folder/" + primaryMesh.Name + ".bin");//Kanske ha en dialog i fönstret?
 	return false;
 
@@ -483,6 +483,11 @@ void ExportFile(Mesh &mesh, std::string path)
 			outfile.write((const char*)&mesh.geometry.faces[a].verts[b].texCoordID, 4);
 		}
 	}
+	//writing lights connected to main mesh
+	if (meshHeader.numberPointLights)
+		outfile.write((char*)&mesh.geometry.pointLights[0], sizeof(PointLight)*meshHeader.numberPointLights);
+	if (meshHeader.numberSpotLights)
+		outfile.write((char*)&mesh.geometry.spotLights[0], sizeof(SpotLight)*meshHeader.numberSpotLights);
 
 	for (int i = 0; i < mainHeader.meshCount; i++) {
 
@@ -509,6 +514,7 @@ void ExportFile(Mesh &mesh, std::string path)
 				outfile.write((const char*)&mesh.subMeshes[i].geometry.faces[a].verts[b].texCoordID, 4);
 			}
 		}
+		//writing lights connected to currently written submesh
 		if(meshHeader.numberPointLights)
 		outfile.write((char*)&mesh.subMeshes[i].geometry.pointLights[0], sizeof(PointLight)*meshHeader.numberPointLights);
 		if(meshHeader.numberSpotLights)
