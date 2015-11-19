@@ -122,12 +122,7 @@ void initUI()
 	MGlobal::executeCommand("columnLayout -columnAttach ""left"" 5 -rowSpacing 5 -columnWidth 100;;");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Everything"" -command ""exportAll"";");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Selected"" -command ""exportSelected"";");
-	MGlobal::executeCommand("text -label ""ExportTo"";");
-	MGlobal::executeCommand("global string $filePathString;");
-
-	MGlobal::executeCommand("textField -w 200 -text ""DummyString"";");
-	MGlobal::executeCommand("textField -q $filePathString;");
-	MGlobal::executeCommand("print $filePathString;");
+	
 	
 	MGlobal::executeCommand("showWindow;");
 	
@@ -180,65 +175,9 @@ void ExportFinder(bool sl)//sl(selected) sätts genom knapparnas call till Export
 	}
 }
 
-void ExtractLights(MFnMesh &mesh, Geometry &geometry)
+void ExtractLights(MFnMesh &meshDag, Geometry &geometry)
 {
-	MSpace::Space world_space = MSpace::kWorld;
-	MFnDagNode meshTransform(mesh.parent(0));
-	MItDag lights(MItDag::kBreadthFirst, MFn::kMesh);
-	lights.reset(meshTransform.object(), MItDag::kBreadthFirst, MFn::kLight);
-
-	MDagPath dag_path;
-	while (!lights.isDone())
-	{
-		if (lights.getPath(dag_path))
-		{
-			MFnDagNode dag_node = dag_path.node();
-			MFnDagNode transform = dag_node.parent(0);
-			MFnDagNode parentPath(transform.parent(0));
-
-			if (!strcmp(parentPath.fullPathName().asChar(), meshTransform.fullPathName().asChar()))
-				if (!dag_node.isIntermediateObject())
-				{
-					MGlobal::displayInfo(MString("Extracting Light " + dag_node.name()));
-
-					if (dag_path.hasFn(MFn::kPointLight))
-					{
-						MFnPointLight fnPointLight(dag_path);
-						PointLight pl;
-						MMatrix matrix = transform.transformationMatrix();
-						pl.pos[0] = matrix.matrix[3][0];
-						pl.pos[1] = matrix.matrix[3][1];
-						pl.pos[2] = matrix.matrix[3][2];
-						pl.col[0] = fnPointLight.color().r;
-						pl.col[1] = fnPointLight.color().g;
-						pl.col[2] = fnPointLight.color().b;
-						pl.intensity = fnPointLight.intensity();
-						geometry.pointLights.push_back(pl);
-					}
-					else if (dag_path.hasFn(MFn::kSpotLight))
-					{
-						MFnSpotLight fnSpotLight(dag_path);
-						SpotLight pl;
-						MMatrix matrix = transform.transformationMatrix();
-						pl.pos[0] = matrix.matrix[3][0];
-						pl.pos[1] = matrix.matrix[3][1];
-						pl.pos[2] = matrix.matrix[3][2];
-						pl.col[0] = fnSpotLight.color().r;
-						pl.col[1] = fnSpotLight.color().g;
-						pl.col[2] = fnSpotLight.color().b;
-						pl.intensity = fnSpotLight.intensity();
-						pl.angle = fnSpotLight.coneAngle();
-						pl.dropoff = fnSpotLight.dropOff();
-						MVector direction = fnSpotLight.lightDirection(0, MSpace::kWorld, 0);
-						pl.direction[0] = direction[0];
-						pl.direction[1] = direction[1];
-						pl.direction[2] = direction[2];
-						geometry.spotLights.push_back(pl);
-					}
-				}
-		}
-		lights.next();
-	}
+	//TODO
 }
 
 Geometry ExtractGeometry(MFnMesh &mesh)
@@ -348,7 +287,7 @@ Material ExtractMaterial(MFnMesh &meshDag)
 						break;
 					}
 				}
-				//eftersom lambert inte har någon specularkanal tillgängligt, söker endast blinn efter speculars
+
 				p = fn.findPlug("specularColorR");
 				p.getValue(material.specColor[0]);
 				p = fn.findPlug("specularColorG");
@@ -446,7 +385,7 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 		}
 		subMeshes.next();
 	}
-	//currently necessary to create this folder manually
+
 	ExportFile(primaryMesh, "C:/New folder/" + primaryMesh.Name + ".bin");//Kanske ha en dialog i fönstret?
 	return false;
 
@@ -462,7 +401,7 @@ void ExportFile(Mesh &mesh, std::string path)
 	mainHeader.version = 2.2;
 	mainHeader.meshCount = mesh.subMeshes.size();
 
-	//writing the main object (the parent)
+
 	outfile.write((const char*)&mainHeader, sizeof(MainHeader));
 
 	MeshHeader meshHeader;
@@ -488,13 +427,7 @@ void ExportFile(Mesh &mesh, std::string path)
 			outfile.write((const char*)&mesh.geometry.faces[a].verts[b].texCoordID, 4);
 		}
 	}
-	//writing lights connected to main mesh
-	if (meshHeader.numberPointLights)
-		outfile.write((char*)&mesh.geometry.pointLights[0], sizeof(PointLight)*meshHeader.numberPointLights);
-	if (meshHeader.numberSpotLights)
-		outfile.write((char*)&mesh.geometry.spotLights[0], sizeof(SpotLight)*meshHeader.numberSpotLights);
 
-	//writing the submeshes (the children)
 	for (int i = 0; i < mainHeader.meshCount; i++) {
 
 		MeshHeader meshHeader;
@@ -520,11 +453,6 @@ void ExportFile(Mesh &mesh, std::string path)
 				outfile.write((const char*)&mesh.subMeshes[i].geometry.faces[a].verts[b].texCoordID, 4);
 			}
 		}
-		//writing lights connected to currently written submesh
-		if(meshHeader.numberPointLights)
-		outfile.write((char*)&mesh.subMeshes[i].geometry.pointLights[0], sizeof(PointLight)*meshHeader.numberPointLights);
-		if(meshHeader.numberSpotLights)
-		outfile.write((char*)&mesh.subMeshes[i].geometry.spotLights[0], sizeof(SpotLight)*meshHeader.numberSpotLights);
 	}
 
 	MatHeader matHeader;
