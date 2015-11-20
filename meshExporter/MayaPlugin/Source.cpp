@@ -6,6 +6,7 @@
 #include <Windows.h>
 #include <string>
 #include <vector>
+#include <stdlib.h>
 
 
 using namespace DirectX;
@@ -22,6 +23,9 @@ Geometry ExtractGeometry(MFnMesh &mesh);
 Material ExtractMaterial(MFnMesh &mesh);
 bool ExportMesh(MFnDagNode &primaryMeshDag);
 void ExportFile(Mesh &mesh, std::string path);
+
+//fileNameExtract
+string getFileName(const string& string);
 
 class exportAll : public MPxCommand
 {
@@ -383,6 +387,11 @@ Material ExtractMaterial(MFnMesh &meshDag)
 						MFnDependencyNode fnDep(connections[i].node());
 						MPlug filename = fnDep.findPlug("ftn");
 						material.diffuseTexture = filename.asString().asChar();
+						
+						material.diffuseTexture = getFileName(material.diffuseTexture);
+						
+									
+						
 						break;
 					}
 				}
@@ -526,4 +535,24 @@ void ExportFile(Mesh &mesh, std::string path)
 	outfile.write((const char*)mesh.material.specularTexture.data(), matHeader.specularNameLength);
 
 	outfile.close();
+}
+
+string getFileName(const string& string)
+{
+	char slashChar = '/';
+
+#ifdef _WIN32
+	slashChar = '\\';
+#endif
+
+	size_t i = string.rfind(slashChar, string.length());
+
+	if (i != string::npos)
+	{
+		return(string.substr(i + 1, string.length() - 1));
+	}
+
+	return("");
+
+
 }
