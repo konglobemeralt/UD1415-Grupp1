@@ -200,7 +200,7 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 
 	//	int lengthp = points.length();
 
-	//	for (size_t i = 0; i < points.length(); i++)
+	//	for (int i = 0; i < points.length(); i++)
 	//	{
 	//		// Data
 	//		Point temppoints = { points[i].x, points[i].y, -points[i].z };
@@ -231,7 +231,9 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 	MFloatPointArray points;
 	MFloatVectorArray normals;
 
-	MGlobal::executeCommand(MString("polyTriangulate -ch 1 " + mesh.name()));//TODO - Bör dra från origmesh eller göra en undo
+	//MGlobal::executeCommand(MString("deleteHistory;"));
+	MGlobal::executeCommand("select " + mesh.name());
+	MGlobal::executeCommand("polyTriangulate;", false, true);//TODO - Bör dra från origmesh eller göra en undo
 
 	mesh.getPoints(points, world_space);
 	for (int i = 0; i < points.length(); i++)
@@ -281,6 +283,8 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 		itFaces.next();
 	}
 	
+	MGlobal::executeCommand("undo;", false, true);
+
 	return geometry;
 }
 
