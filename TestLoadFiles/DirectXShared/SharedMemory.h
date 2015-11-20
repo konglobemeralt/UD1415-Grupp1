@@ -70,6 +70,20 @@ public:
 	D3D11_MAPPED_SUBRESOURCE mapSub;
 	// _________________________________________________________________________________________________
 
+	// Mesh headers
+	struct MainHeader {
+		int version, meshCount;
+	};
+
+	struct MeshHeader
+	{
+		int nameLength, numberPoints, numberNormals, numberCoords, numberFaces, subMeshID, numberPointLights, numberSpotLights;
+	};
+
+	struct MatHeader {
+		int diffuseNameLength, specularNameLength;
+	};
+
 	struct Point
 	{
 		float x, y, z;
@@ -127,31 +141,19 @@ public:
 
 	struct SubMesh
 	{
+		MeshHeader header;
 		std::string Name;
 		Geometry geometry;
 	};
 
 	struct Mesh
 	{
+		MeshHeader header;
 		std::string Name;
 		int skeletonID;
 		std::vector<SubMesh> subMeshes;
 		Geometry geometry;
 		Material material;
-	};
-
-	// Mesh headers
-	struct MainHeader {
-		int version, meshCount;
-	};
-
-	struct MeshHeader
-	{
-		int nameLength, numberPoints, numberNormals, numberCoords, numberFaces, subMeshID, numberPointLights, numberSpotLights;
-	};
-
-	struct MatHeader {
-		int diffuseNameLength, specularNameLength;
 	};
 
 	struct Point2

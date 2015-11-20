@@ -32,5 +32,6 @@ VS_OUT main(VS_IN input)
 
 	output.Pos = mul(float4(input.Pos, 1.0f), mul(world, mul(view, projection)));
 	output.Normal = mul(float4(input.Normal, 1.0f), mul(world, mul(view, projection)));
+	output.uv = input.uv;
 	return output;
 }

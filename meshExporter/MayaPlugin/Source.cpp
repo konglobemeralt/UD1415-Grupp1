@@ -481,7 +481,7 @@ void ExportFile(Mesh &mesh, std::string path)
 
 		//finding sizes of submesh contents in header
 		MeshHeader meshHeader;
-		meshHeader.nameLength = mesh.Name.length();
+		meshHeader.nameLength = mesh.Name.length()+1;
 		meshHeader.numberPoints = mesh.subMeshes[i].geometry.points.size();
 		meshHeader.numberNormals = mesh.subMeshes[i].geometry.normals.size();
 		meshHeader.numberCoords = mesh.subMeshes[i].geometry.texCoords.size();
@@ -507,8 +507,8 @@ void ExportFile(Mesh &mesh, std::string path)
 	}
 
 	MatHeader matHeader;
-	matHeader.diffuseNameLength = mesh.material.diffuseTexture.length();
-	matHeader.specularNameLength = mesh.material.specularTexture.length();
+	matHeader.diffuseNameLength = mesh.material.diffuseTexture.length()+1;
+	matHeader.specularNameLength = mesh.material.specularTexture.length()+1;
 	outfile.write((const char*)&matHeader, sizeof(MatHeader));
 
 	outfile.write((const char*)&mesh.material.diffColor, 16);

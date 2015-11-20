@@ -142,6 +142,7 @@ void D3D::Render()
 	{
 		if (meshes[i].meshesBuffer[0] != NULL)
 		{
+			devcon->PSSetShaderResources(0, 1, &meshes[i].meshTextures);
 			devcon->VSSetConstantBuffers(0, 1, &meshes[i].transformBuffer);
 			devcon->IASetVertexBuffers(0, 3, meshes[i].meshesBuffer, strides, offsets);
 			devcon->Draw(meshes[i].pos.size(), 0);
@@ -162,7 +163,7 @@ void D3D::Create()
 
 	// Load bin file
 	std::ifstream infile;
-	infile.open("C:/New folder/pSphere1.bin", std::ifstream::binary);
+	infile.open("C:/New folder/pCube1.bin", std::ifstream::binary);
 
 	if (infile)
 	{
@@ -171,21 +172,22 @@ void D3D::Create()
 		infile.read((char*)&mainHeader, sizeof(MainHeader));
 
 		// Mesh header
-		MeshHeader meshHeader;
-		infile.read((char*)&meshHeader, sizeof(MeshHeader));
+		Mesh mesh;
+		vector<SubMesh> submesh;
+		infile.read((char*)&mesh.header, sizeof(MeshHeader));
 
 		// Mesh data
-		Mesh mesh;
-		mesh.geometry.points.resize(meshHeader.numberPoints);
-		mesh.geometry.normals.resize(meshHeader.numberNormals);
-		mesh.geometry.texCoords.resize(meshHeader.numberCoords);
-		infile.read((char*)mesh.Name.data(), meshHeader.nameLength);
-		infile.read((char*)mesh.geometry.points.data(), meshHeader.numberPoints * sizeof(Point));
-		infile.read((char*)mesh.geometry.normals.data(), meshHeader.numberNormals * sizeof(Normal));
-		infile.read((char*)mesh.geometry.texCoords.data(), meshHeader.numberCoords * sizeof(TexCoord));
+		mesh.geometry.points.resize(mesh.header.numberPoints);
+		mesh.geometry.normals.resize(mesh.header.numberNormals);
+		mesh.geometry.texCoords.resize(mesh.header.numberCoords);
+		infile.read((char*)mesh.Name.data(), mesh.header.nameLength);
+		infile.read((char*)mesh.geometry.points.data(), mesh.header.numberPoints * sizeof(Point));
+		infile.read((char*)mesh.geometry.normals.data(), mesh.header.numberNormals * sizeof(Normal));
+		infile.read((char*)mesh.geometry.texCoords.data(), mesh.header.numberCoords * sizeof(TexCoord));
+		submesh.resize(mainHeader.meshCount);
 
-		mesh.geometry.faces.resize(meshHeader.numberFaces);
-		for (size_t i = 0; i < meshHeader.numberFaces; i++){
+		mesh.geometry.faces.resize(mesh.header.numberFaces);
+		for (size_t i = 0; i < mesh.header.numberFaces; i++){
 			for (size_t j = 0; j < 3; j++) {
 				infile.read((char*)&mesh.geometry.faces[i].verts[j].pointID, 4);
 				infile.read((char*)&mesh.geometry.faces[i].verts[j].normalID, 4);
@@ -193,9 +195,37 @@ void D3D::Create()
 			}
 		}
 
-		//for (size_t i = 0; i < mainHeader.meshCount; i++){
+		for (size_t i = 0; i < mainHeader.meshCount; i++){
+			// Mesh header
+			
+			infile.read((char*)&submesh[i].header, sizeof(MeshHeader));
 
-		//}
+			// Mesh data
+			mesh.subMeshes[i].geometry.points.resize(submesh[i].header.numberPoints);
+			mesh.subMeshes[i].geometry.normals.resize(submesh[i].header.numberNormals);
+			mesh.subMeshes[i].geometry.texCoords.resize(submesh[i].header.numberCoords);
+			infile.read((char*)mesh.subMeshes[i].Name.data(), submesh[i].header.nameLength);
+			infile.read((char*)mesh.subMeshes[i].geometry.points.data(), submesh[i].header.numberPoints * sizeof(Point));
+			infile.read((char*)mesh.subMeshes[i].geometry.normals.data(), submesh[i].header.numberNormals * sizeof(Normal));
+			infile.read((char*)mesh.subMeshes[i].geometry.texCoords.data(), submesh[i].header.numberCoords * sizeof(TexCoord));
+
+			mesh.geometry.faces.resize(submesh[i].header.numberFaces);
+			for (size_t j = 0; j < submesh[i].header.numberFaces; j++) {
+				for (size_t k = 0; k < 3; k++) {
+					infile.read((char*)&submesh[i].geometry.faces[j].verts[k].pointID, 4);
+					infile.read((char*)&submesh[i].geometry.faces[j].verts[k].normalID, 4);
+					infile.read((char*)&submesh[i].geometry.faces[j].verts[k].texCoordID, 4);
+				}
+			}
+		}
+
+		MatHeader matHeader;
+		infile.read((char*)&matHeader, sizeof(MatHeader));
+		infile.read((char*)&mesh.material.diffColor, 16);
+		infile.read((char*)mesh.material.diffuseTexture.data(), matHeader.diffuseNameLength);
+
+		infile.read((char*)&mesh.material.specColor, 16);
+		infile.read((char*)mesh.material.specularTexture.data(), matHeader.specularNameLength);
 
 		infile.close();
 
@@ -203,11 +233,11 @@ void D3D::Create()
 
 		// TEST TO PUT THE OBJERCT TOGHETER
 		meshes.push_back(MeshData());
-		meshes.back().pos.resize(meshHeader.numberFaces * 3);
-		meshes.back().normal.resize(meshHeader.numberFaces * 3);
-		meshes.back().uv.resize(meshHeader.numberFaces * 3);
+		meshes.back().pos.resize(mesh.header.numberFaces * 3);
+		meshes.back().normal.resize(mesh.header.numberFaces * 3);
+		meshes.back().uv.resize(mesh.header.numberFaces * 3);
 		size_t index = 0;
-		for (size_t i = 0; i < meshHeader.numberFaces; i++){
+		for (size_t i = 0; i < mesh.header.numberFaces; i++){
 			for (size_t j = 0; j < 3; j++) {
 				meshes.back().pos[index].x = mesh.geometry.points[mesh.geometry.faces[i].verts[j].pointID].x;
 				meshes.back().pos[index].y = mesh.geometry.points[mesh.geometry.faces[i].verts[j].pointID].y;
@@ -226,6 +256,9 @@ void D3D::Create()
 		// Transform
 		DirectX::XMStoreFloat4x4(&meshes.back().transform, XMMatrixIdentity());
 		meshes.back().transformBuffer = CreateConstantBuffer(sizeof(XMFLOAT4X4), &meshes.back().transform);
+
+		// Texture
+		CreateTexture(0);
 	}
 }
 
@@ -252,10 +285,9 @@ ID3D11Buffer* D3D::CreateMesh(size_t size, const void* data, size_t vertexCount)
 void D3D::CreateTexture(int lMesh)
 {
 	CoInitialize(NULL);
-	string textureString = meshes[lMesh].texturePath;
-	wstring textureName(textureString.begin(), textureString.end());
+	wstring name = L"D:/Group-project-level-editor/CubeTexture.png";
 
-	CreateWICTextureFromFile(device, textureName.c_str(), NULL, &meshes[lMesh].meshTextures);
+	CreateWICTextureFromFile(device, name.c_str(), NULL, &meshes.back().meshTextures);
 }
 
 ID3D11Buffer* D3D::CreateConstantBuffer(size_t size, const void* data)
