@@ -165,7 +165,7 @@ void D3D::Create()
 	std::ifstream infile;
 	infile.open("C:/New folder/pCube1.bin", std::ifstream::binary);
 
-	if (infile)
+	if (infile.is_open() == true)
 	{
 		// Main header
 		MainHeader mainHeader;
@@ -222,12 +222,10 @@ void D3D::Create()
 		MatHeader matHeader;
 		infile.read((char*)&matHeader, sizeof(MatHeader));
 		infile.read((char*)&mesh.material.diffColor, 16);
-		infile.read((char*)mesh.material.diffuseTexture.data(), matHeader.diffuseNameLength);
+		//infile.read((char*)mesh.material.diffuseTexture.data(), matHeader.diffuseNameLength);		// Crash here on \ should be /
 
 		infile.read((char*)&mesh.material.specColor, 16);
 		infile.read((char*)mesh.material.specularTexture.data(), matHeader.specularNameLength);
-
-		infile.close();
 
 
 
@@ -260,6 +258,7 @@ void D3D::Create()
 		// Texture
 		CreateTexture(0);
 	}
+	infile.close();
 }
 
 ID3D11Buffer* D3D::CreateMesh(size_t size, const void* data, size_t vertexCount)
