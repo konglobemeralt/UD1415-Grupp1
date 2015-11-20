@@ -386,6 +386,7 @@ Material ExtractMaterial(MFnMesh &meshDag)
 						break;
 					}
 				}
+				material.specularTexture = "";
 				material.specColor[0] = -1;//Materialet har ingen specularkanal
 			}
 		}
@@ -508,7 +509,14 @@ void ExportFile(Mesh &mesh, std::string path)
 
 	MatHeader matHeader;
 	matHeader.diffuseNameLength = mesh.material.diffuseTexture.length()+1;
-	matHeader.specularNameLength = mesh.material.specularTexture.length()+1;
+	matHeader.specularNameLength = mesh.material.specularTexture.length() + 1;
+
+	if (matHeader.specularNameLength == 1)
+		matHeader.specularNameLength = 0;
+
+	if (matHeader.diffuseNameLength == 1)
+		matHeader.diffuseNameLength = 0;
+
 	outfile.write((const char*)&matHeader, sizeof(MatHeader));
 
 	outfile.write((const char*)&mesh.material.diffColor, 16);
