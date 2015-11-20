@@ -541,14 +541,17 @@ string getFileName(const string& string)
 {
 	char slashChar = '/';
 
-#ifdef _WIN32
-	slashChar = '\\';
-#endif
+//#ifdef _WIN32
+//	slashChar = '\\';
+//#endif
+//
+	//size_t i = string.rfind(slashChar, string.length());
 
-	size_t i = string.rfind(slashChar, string.length());
+	int i = string.find_last_of(slashChar);
 
-	if (i != string::npos)
+	if (i != string.length())
 	{
+		//return (string.substr(i + 1));
 		return(string.substr(i + 1, string.length() - 1));
 	}
 

@@ -222,7 +222,7 @@ void D3D::Create()
 		MatHeader matHeader;
 		infile.read((char*)&matHeader, sizeof(MatHeader));
 		infile.read((char*)&mesh.material.diffColor, 16);
-		//infile.read((char*)mesh.material.diffuseTexture.data(), matHeader.diffuseNameLength);		// Crash here on \ should be /
+		//infile.read((char*)mesh.material.diffuseTexture.data(), matHeader.diffuseNameLength);		// Crash here on reading of string.
 
 		infile.read((char*)&mesh.material.specColor, 16);
 		infile.read((char*)mesh.material.specularTexture.data(), matHeader.specularNameLength);
