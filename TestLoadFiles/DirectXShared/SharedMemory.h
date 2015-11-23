@@ -188,6 +188,7 @@ public:
 	unsigned int localVertex;
 	XMFLOAT3 vtxChanged;
 	unsigned int meshSize;
+	Mesh mesh;
 };
 
 #endif

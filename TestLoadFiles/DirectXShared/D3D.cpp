@@ -172,7 +172,6 @@ void D3D::Create()
 		infile.read((char*)&mainHeader, sizeof(MainHeader));
 
 		// Mesh header
-		Mesh mesh;
 		vector<SubMesh> submesh;
 		infile.read((char*)&mesh.header, sizeof(MeshHeader));
 
@@ -289,7 +288,11 @@ ID3D11Buffer* D3D::CreateMesh(size_t size, const void* data, size_t vertexCount)
 void D3D::CreateTexture(int lMesh)
 {
 	CoInitialize(NULL);
-	wstring name = L"D:/Group-project-level-editor/CubeTexture.png";
+	string bleh = mesh.material.diffuseTexture.c_str();
+	
+	wstring t(bleh.begin(), bleh.end());
+
+	wstring name = L"D:/Group-project-level-editor/" + t;
 
 	CreateWICTextureFromFile(device, name.c_str(), NULL, &meshes.back().meshTextures);
 }
