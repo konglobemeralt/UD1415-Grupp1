@@ -29,6 +29,11 @@ struct Face
 	Vertex verts[3];
 };
 
+struct VertexOut
+{
+	float pos[3], nor[3], uv[2];
+};
+
 struct Material
 {
 	float diffColor[4], specColor[4];
@@ -51,7 +56,8 @@ struct Geometry
 	std::vector<Normal> normals;
 	std::vector<TexCoord> texCoords;
 	std::vector<Face> faces;
-
+	std::vector<VertexOut> vertices;
+	
 	std::vector<PointLight> pointLights;
 	std::vector<SpotLight> spotLights;
 };
@@ -80,7 +86,7 @@ struct MainHeader {
 
 struct MeshHeader
 {
-	int nameLength, numberPoints, numberNormals, numberCoords, numberFaces, subMeshID, numberPointLights, numberSpotLights;
+	int nameLength, numberOfVertices, subMeshID, numberPointLights, numberSpotLights;
 };
 
 struct MatHeader {

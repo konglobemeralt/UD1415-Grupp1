@@ -184,6 +184,27 @@ void ExtractLights(MFnMesh &meshDag, Geometry &geometry)
 	//TODO
 }
 
+vector<VertexOut> UnpackVertices(vector<Point> *points, vector<Normal> *normals, vector<TexCoord> *UVs, vector<Face> *vertexIndices, int skeleton)
+{
+	vector<VertexOut> vertices;
+
+	for (int i = 0; i < vertexIndices->size(); i++) {
+		for (int a = 0; a < 3; a++) {
+			VertexOut tempVertex;
+			tempVertex.pos[0] = points->at(vertexIndices->at(i).verts[a].pointID).x;
+			tempVertex.pos[1] = points->at(vertexIndices->at(i).verts[a].pointID).y;
+			tempVertex.pos[2] = points->at(vertexIndices->at(i).verts[a].pointID).z;
+			tempVertex.nor[0] = normals->at(vertexIndices->at(i).verts[a].normalID).x;
+			tempVertex.nor[1] = normals->at(vertexIndices->at(i).verts[a].normalID).y;
+			tempVertex.nor[2] = normals->at(vertexIndices->at(i).verts[a].normalID).z;
+			tempVertex.uv[0] = UVs->at(vertexIndices->at(i).verts[a].texCoordID).u;
+			tempVertex.uv[1] = UVs->at(vertexIndices->at(i).verts[a].texCoordID).v;
+			vertices.push_back(tempVertex);
+		}
+	}
+	return vertices;
+}
+
 Geometry ExtractGeometry(MFnMesh &mesh)
 {
 	//// Test without polytriangulate - MAYBE NOT WORKING
@@ -288,6 +309,8 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 	}
 	
 	MGlobal::executeCommand("undo;", false, true);
+
+	geometry.vertices = UnpackVertices(&geometry.points, &geometry.normals, &geometry.texCoords, &geometry.faces, -1);
 
 	return geometry;
 }
@@ -451,23 +474,33 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 
 void ExportFile(Mesh &mesh, std::string path)
 {
+
 	//kolla its för dokumentation
 	std::ofstream outfile;
 	outfile.open(path.c_str(), std::ofstream::binary);
 	MainHeader mainHeader;
-	mainHeader.version = 2.2;
+	mainHeader.version = 23;
 	mainHeader.meshCount = mesh.subMeshes.size();
 
-
+	MeshHeader meshHeader;
+	meshHeader.nameLength = mesh.Name.length() + 1;
+	meshHeader.numberOfVertices = mesh.geometry.vertices.size();
+	meshHeader.subMeshID = 0;
+	meshHeader.numberPointLights = mesh.geometry.pointLights.size();
+	meshHeader.numberSpotLights = mesh.geometry.spotLights.size();
 	outfile.write((const char*)&mainHeader, sizeof(MainHeader));
+	int toMesh = sizeof(MainHeader) + sizeof(MeshHeader) + meshHeader.nameLength + meshHeader.numberOfVertices*sizeof(VertexOut) + meshHeader.numberPointLights * sizeof(PointLight) + meshHeader.numberSpotLights * sizeof(SpotLight);
+	outfile.write((char*)&toMesh, 4);
+
+	for (int i = 0; i < mainHeader.meshCount; i++)
+	{
+		toMesh += sizeof(MeshHeader) + meshHeader.nameLength + meshHeader.numberOfVertices*sizeof(VertexOut) + meshHeader.numberPointLights * sizeof(PointLight) + meshHeader.numberSpotLights * sizeof(SpotLight);
+		outfile.write((char*)&toMesh, 4);
+	}
 
 	//finding sizes of main mesh contents in header
-	MeshHeader meshHeader;
 	meshHeader.nameLength = mesh.Name.length()+1;
-	meshHeader.numberPoints = mesh.geometry.points.size();
-	meshHeader.numberNormals = mesh.geometry.normals.size();
-	meshHeader.numberCoords = mesh.geometry.texCoords.size();
-	meshHeader.numberFaces = mesh.geometry.faces.size();
+	meshHeader.numberOfVertices = mesh.geometry.vertices.size();
 	meshHeader.subMeshID = -1;
 	meshHeader.numberPointLights = mesh.geometry.pointLights.size();
 	meshHeader.numberSpotLights = mesh.geometry.spotLights.size();
@@ -475,45 +508,25 @@ void ExportFile(Mesh &mesh, std::string path)
 
 	//writing the main mesh contents to file according to the sizes of main mesh header
 	outfile.write((const char*)mesh.Name.data(), meshHeader.nameLength);
-	outfile.write((const char*)mesh.geometry.points.data(), meshHeader.numberPoints*sizeof(Point));
-	outfile.write((const char*)mesh.geometry.normals.data(), meshHeader.numberNormals*sizeof(Normal));
-	outfile.write((const char*)mesh.geometry.texCoords.data(), meshHeader.numberCoords*sizeof(TexCoord));
-
-	for (int a = 0; a < meshHeader.numberFaces; a++) {
-		for (int b = 0; b < 3; b++) {
-			outfile.write((const char*)&mesh.geometry.faces[a].verts[b].pointID, 4);
-			outfile.write((const char*)&mesh.geometry.faces[a].verts[b].normalID, 4);
-			outfile.write((const char*)&mesh.geometry.faces[a].verts[b].texCoordID, 4);
-		}
-	}
+	outfile.write((const char*)mesh.geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(VertexOut));
+	outfile.write((const char*)mesh.geometry.pointLights.data(), meshHeader.numberPointLights * sizeof(PointLight));
+	outfile.write((const char*)mesh.geometry.spotLights.data(), meshHeader.numberSpotLights * sizeof(SpotLight));
 
 	for (int i = 0; i < mainHeader.meshCount; i++) {
 
 		//finding sizes of submesh contents in header
-		MeshHeader meshHeader;
 		meshHeader.nameLength = mesh.Name.length()+1;
-		meshHeader.numberPoints = mesh.subMeshes[i].geometry.points.size();
-		meshHeader.numberNormals = mesh.subMeshes[i].geometry.normals.size();
-		meshHeader.numberCoords = mesh.subMeshes[i].geometry.texCoords.size();
-		meshHeader.numberFaces = mesh.subMeshes[i].geometry.faces.size();
-		meshHeader.subMeshID = i;
+		meshHeader.numberOfVertices = mesh.subMeshes[i].geometry.vertices.size();
+		meshHeader.subMeshID = i + 1;
 		meshHeader.numberPointLights = mesh.subMeshes[i].geometry.pointLights.size();
 		meshHeader.numberSpotLights = mesh.subMeshes[i].geometry.spotLights.size();
 		outfile.write((const char*)&meshHeader, sizeof(MeshHeader));//writing the sizes found in the submesh header
 	
 		//writing the submesh contents to file according to the sizes of main mesh header
 		outfile.write((const char*)mesh.subMeshes[i].Name.data(), meshHeader.nameLength);
-		outfile.write((const char*)mesh.subMeshes[i].geometry.points.data(), meshHeader.numberPoints*sizeof(Point));
-		outfile.write((const char*)mesh.subMeshes[i].geometry.normals.data(), meshHeader.numberNormals*sizeof(Normal));
-		outfile.write((const char*)mesh.subMeshes[i].geometry.texCoords.data(), meshHeader.numberCoords*sizeof(TexCoord));
-
-		for (int a = 0; a < meshHeader.numberFaces; a++) {
-			for (int b = 0; b < 3; b++) {
-				outfile.write((const char*)&mesh.subMeshes[i].geometry.faces[a].verts[b].pointID, 4);
-				outfile.write((const char*)&mesh.subMeshes[i].geometry.faces[a].verts[b].normalID, 4);
-				outfile.write((const char*)&mesh.subMeshes[i].geometry.faces[a].verts[b].texCoordID, 4);
-			}
-		}
+		outfile.write((const char*)mesh.subMeshes[i].geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(VertexOut));
+		outfile.write((const char*)mesh.subMeshes[i].geometry.pointLights.data(), meshHeader.numberPointLights * sizeof(PointLight));
+		outfile.write((const char*)mesh.subMeshes[i].geometry.spotLights.data(), meshHeader.numberSpotLights * sizeof(SpotLight));
 	}
 
 	MatHeader matHeader;
@@ -533,9 +546,9 @@ void ExportFile(Mesh &mesh, std::string path)
 	outfile.write((const char*)&matHeader, sizeof(MatHeader));
 
 	outfile.write((const char*)&mesh.material.diffColor, 16);
-	outfile.write((const char*)mesh.material.diffuseTexture.data(), matHeader.diffuseNameLength);
-
 	outfile.write((const char*)&mesh.material.specColor, 16);
+
+	outfile.write((const char*)mesh.material.diffuseTexture.data(), matHeader.diffuseNameLength);
 	outfile.write((const char*)mesh.material.specularTexture.data(), matHeader.specularNameLength);
 
 	outfile.close();
