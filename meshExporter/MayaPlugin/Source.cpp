@@ -526,6 +526,10 @@ void ExportFile(Mesh &mesh, std::string path)
 	if (matHeader.diffuseNameLength == 1)
 		matHeader.diffuseNameLength = 0;
 
+
+	std::string diffuseName = mesh.material.diffuseTexture;
+	std::string specName = mesh.material.specularTexture;
+
 	outfile.write((const char*)&matHeader, sizeof(MatHeader));
 
 	outfile.write((const char*)&mesh.material.diffColor, 16);
