@@ -242,6 +242,8 @@ void ExtractLights(MFnMesh &meshDag, Geometry &geometry)
 			geometry.spotLights.back().direction[0] = spot.lightDirection().x;
 			geometry.spotLights.back().direction[1] = spot.lightDirection().y;
 			geometry.spotLights.back().direction[2] = spot.lightDirection().z;
+
+			
 	
 
 		}
