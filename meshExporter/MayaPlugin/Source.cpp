@@ -181,7 +181,78 @@ void ExportFinder(bool sl)//sl(selected) sätts genom knapparnas call till Export
 
 void ExtractLights(MFnMesh &meshDag, Geometry &geometry)
 {
-	//TODO
+	MItDag iter(MItDag::kBreadthFirst, MFn::kLight);
+	while (!iter.isDone())
+	{
+		if (iter.item().hasFn(MFn::kPointLight))
+		{
+			MFnPointLight point = iter.item();
+			geometry.pointLights.push_back(PointLight());
+
+			for (size_t i = 0; i < point.parentCount(); i++)
+			{
+				MObject parent = point.parent(i);
+				if (parent.hasFn(MFn::kTransform))
+				{
+					MFnTransform transform(parent);
+					MVector translation = transform.translation(MSpace::kObject);
+					geometry.pointLights.back().pos[0] = translation.x;
+					geometry.pointLights.back().pos[1] = translation.y;
+					geometry.pointLights.back().pos[2] = translation.z;
+					break;
+				}
+			}
+
+			geometry.pointLights.back().col[0] = point.color().r;
+			geometry.pointLights.back().col[1] = point.color().g;
+			geometry.pointLights.back().col[2] = point.color().b;
+
+			geometry.pointLights.back().intensity = point.intensity();
+
+
+		}
+		else if (iter.item().hasFn(MFn::kSpotLight))
+		{
+			MFnSpotLight spot = iter.item();
+			geometry.spotLights.push_back(SpotLight());
+
+
+			for (size_t i = 0; i < spot.parentCount(); i++)
+			{
+				MObject parent = spot.parent(i);
+				if (parent.hasFn(MFn::kTransform))
+				{
+					MFnTransform transform(parent);
+					MVector translation = transform.translation(MSpace::kObject);
+					geometry.spotLights.back().pos[0] = translation.x;
+					geometry.spotLights.back().pos[1] = translation.y;
+					geometry.spotLights.back().pos[2] = translation.z;
+					break;
+				}
+			}
+
+			geometry.spotLights.back().col[0] = spot.color().r;
+			geometry.spotLights.back().col[1] = spot.color().g;
+			geometry.spotLights.back().col[2] = spot.color().b;
+
+			geometry.spotLights.back().intensity = spot.intensity();
+
+			geometry.spotLights.back().angle = spot.coneAngle();
+
+			geometry.spotLights.back().direction[0] = spot.lightDirection().x;
+			geometry.spotLights.back().direction[1] = spot.lightDirection().y;
+			geometry.spotLights.back().direction[2] = spot.lightDirection().z;
+
+			
+	
+
+		}
+
+
+
+
+		iter.next();
+	}
 }
 
 vector<VertexOut> UnpackVertices(vector<Point> *points, vector<Normal> *normals, vector<TexCoord> *UVs, vector<Face> *vertexIndices, int skeleton)
