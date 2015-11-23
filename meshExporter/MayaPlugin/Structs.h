@@ -47,7 +47,7 @@ struct PointLight
 
 struct SpotLight
 {
-	float pos[3], col[3], intensity, angle, direction[3], dropoff;
+	float pos[3], col[3], intensity, angle, direction[3];
 };
 
 struct Geometry

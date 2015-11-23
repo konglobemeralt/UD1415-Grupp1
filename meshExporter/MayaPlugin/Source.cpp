@@ -481,6 +481,7 @@ void ExportFile(Mesh &mesh, std::string path)
 	MainHeader mainHeader;
 	mainHeader.version = 23;
 	mainHeader.meshCount = mesh.subMeshes.size();
+	outfile.write((const char*)&mainHeader, sizeof(MainHeader));
 
 	MeshHeader meshHeader;
 	meshHeader.nameLength = mesh.Name.length() + 1;
@@ -488,20 +489,26 @@ void ExportFile(Mesh &mesh, std::string path)
 	meshHeader.subMeshID = 0;
 	meshHeader.numberPointLights = mesh.geometry.pointLights.size();
 	meshHeader.numberSpotLights = mesh.geometry.spotLights.size();
-	outfile.write((const char*)&mainHeader, sizeof(MainHeader));
-	int toMesh = sizeof(MainHeader) + sizeof(MeshHeader) + meshHeader.nameLength + meshHeader.numberOfVertices*sizeof(VertexOut) + meshHeader.numberPointLights * sizeof(PointLight) + meshHeader.numberSpotLights * sizeof(SpotLight);
+	int toMesh = sizeof(MainHeader) + sizeof(MeshHeader) + meshHeader.nameLength;
 	outfile.write((char*)&toMesh, 4);
+	toMesh += meshHeader.numberOfVertices*sizeof(VertexOut) + meshHeader.numberPointLights * sizeof(PointLight) + meshHeader.numberSpotLights * sizeof(SpotLight);
 
 	for (int i = 0; i < mainHeader.meshCount; i++)
 	{
-		toMesh += sizeof(MeshHeader) + meshHeader.nameLength + meshHeader.numberOfVertices*sizeof(VertexOut) + meshHeader.numberPointLights * sizeof(PointLight) + meshHeader.numberSpotLights * sizeof(SpotLight);
+		meshHeader.nameLength = mesh.Name.length() + 1;
+		meshHeader.numberOfVertices = mesh.subMeshes[i].geometry.vertices.size();
+		meshHeader.subMeshID = i + 1;
+		meshHeader.numberPointLights = mesh.subMeshes[i].geometry.pointLights.size();
+		meshHeader.numberSpotLights = mesh.subMeshes[i].geometry.spotLights.size();
+		toMesh += sizeof(MeshHeader) + meshHeader.nameLength;
 		outfile.write((char*)&toMesh, 4);
+		toMesh += meshHeader.numberOfVertices*sizeof(VertexOut) + meshHeader.numberPointLights * sizeof(PointLight) + meshHeader.numberSpotLights * sizeof(SpotLight);
 	}
 
 	//finding sizes of main mesh contents in header
 	meshHeader.nameLength = mesh.Name.length()+1;
 	meshHeader.numberOfVertices = mesh.geometry.vertices.size();
-	meshHeader.subMeshID = -1;
+	meshHeader.subMeshID = 0;
 	meshHeader.numberPointLights = mesh.geometry.pointLights.size();
 	meshHeader.numberSpotLights = mesh.geometry.spotLights.size();
 	outfile.write((const char*)&meshHeader, sizeof(MeshHeader)); //writing the sizes found in the main mesh header
