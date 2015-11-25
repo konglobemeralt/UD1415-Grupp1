@@ -140,7 +140,7 @@ void exportToFile()
 
 			MString tileType = tileEnum.fieldName(0);
 
-			if (strcmp(tileType.asChar(), "floorTile"))
+			if (!strcmp(tileType.asChar(), "floorTile"))
 			{
 				MGlobal::displayInfo("tile says " + tileType);
 			}
@@ -155,11 +155,11 @@ void exportToFile()
 
 			MString answer = walkEnum.fieldName(0);
 
-			if (strcmp(answer.asChar(), "Yes"))
+			if (!strcmp(answer.asChar(), "Yes"))
 			{
 				MGlobal::displayInfo("walkable: yes");
 			}
-			if (strcmp(answer.asChar(), "No"))
+			if (!strcmp(answer.asChar(), "No"))
 			{
 				MGlobal::displayInfo("walkable: no");
 			}
@@ -174,11 +174,11 @@ void exportToFile()
 			MString answer = entranceEnum.fieldName(0);
 
 
-			if (strcmp(answer.asChar(), "Yes"))
+			if (!strcmp(answer.asChar(), "Yes"))
 			{
 				MGlobal::displayInfo("entrance: yes");
 			}
-			if (strcmp(answer.asChar(), "No"))
+			if (!strcmp(answer.asChar(), "No"))
 			{
 				MGlobal::displayInfo("entrance: no");
 			}
@@ -191,11 +191,11 @@ void exportToFile()
 			MString answer = goalEnum.fieldName(0);
 
 
-			if (strcmp(answer.asChar(), "Yes"))
+			if (!strcmp(answer.asChar(), "Yes"))
 			{
 				MGlobal::displayInfo("goal: yes");
 			}
-			if (strcmp(answer.asChar(), "No"))
+			if (!strcmp(answer.asChar(), "No"))
 			{
 				MGlobal::displayInfo("goal: no");
 			}
