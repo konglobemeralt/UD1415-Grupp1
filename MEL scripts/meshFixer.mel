@@ -95,8 +95,12 @@ string $mesh;
 //clean history and center pivot just in case
 for ($mesh in $mySelection) 
 {
-DeleteHistory;
-CenterPivot;
+    DeleteHistory;
+    FreezeTransformations;
+    performFreezeTransformations(0);
+    makeIdentity -apply true -t 1 -r 1 -s 1 -n 0 -pn 1;
+    CenterPivot;
+ 
 }
 for ($mesh in $mySelection) 
 {
