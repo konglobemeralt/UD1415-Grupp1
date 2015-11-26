@@ -12,6 +12,8 @@
 using namespace DirectX;
 using namespace std;
 
+static const float EPS = 0.1f;
+
 //UI
 void initUI();
 void deleteUI();
@@ -199,11 +201,37 @@ void exportToFile()
 			{
 				MGlobal::displayInfo("goal: no");
 			}
+		}	
+
+		//Name
+		MString name = meshTemp.name();
+
+		MGlobal::displayInfo(MString() + "Name: " + name);
+
+		//Translate, tile and rotate so we can get the tile position and render object position
+		MFloatVector tPosition;
+		XMFLOAT3 TranslateTransfer;
+
+		tPosition = transformTemp.translation(MSpace::kTransform);
+
+		TranslateTransfer.x = tPosition.x;
+		TranslateTransfer.y = tPosition.y;
+		TranslateTransfer.z = tPosition.z;
+
+		int coordX = (int)(tPosition.x + EPS);
+		int coordY = (int)(tPosition.y + EPS);
+
+		if (coordX < 0 || coordY < 0)
+		{
+			cout << "A gameObject:" + name + " is out of bounds.";
 		}
 
-		
-		
-		
+		MEulerRotation eulerRotation;
+		transformTemp.getRotation(eulerRotation);
+
+		MGlobal::displayInfo(MString() + "Translation: " + TranslateTransfer.x + " " + TranslateTransfer.y + " " + TranslateTransfer.z);
+		MGlobal::displayInfo(MString() + "Tiles: " + coordX + " " + coordY);
+		MGlobal::displayInfo(MString() + "Rotation: " + eulerRotation.x + " " + eulerRotation.y + " " + eulerRotation.z);
 
 		itMeshes.next();
 	}
