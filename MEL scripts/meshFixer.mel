@@ -1,0 +1,168 @@
+global string $textFieldWin;
+global string $textfield1;
+
+
+string $window = `window -title "FixThings"`;
+
+	
+	
+	columnLayout mainColumn;
+			// create  buttons
+			button -w 240 -h 50 -label"Fix Pivot and History"  -command "fixPivot";
+			button -w 240 -h 50 -label "Add Custom Attributes" -command "addCustomAttrib";
+			// create the text field
+			text -label "";
+			text -label "Tile Type: ";
+					$textfield1 = `textFieldGrp -changeCommand "updateHappened()"
+                    -text "tempTile"`;
+					 
+					text -label "Walkable: ";
+                    radioButtonGrp -p mainColumn -numberOfRadioButtons 2 -select 1 -l1 "Yes" -l2 "No" walkChoice;
+                    text -label "Entrance: ";
+                    radioButtonGrp -p mainColumn -numberOfRadioButtons 2 -select 1 -l1 "Yes" -l2 "No" entranceChoice;
+                    text -label "Goal: ";
+                    radioButtonGrp -p mainColumn -numberOfRadioButtons 2 -select 1 -l1 "Yes" -l2 "No" goalChoice;
+                    				
+	       	
+	       	
+	// show the window    	       	
+	showWindow $window;;
+  
+
+global proc addCustomAttrib()  
+{
+    $selection = `ls -sl -type "transform"`;
+    string $mesh;
+    string $shapes[] = `listRelatives -children -shapes $selection[0]`;
+      
+    for ($mesh in $selection) 
+    {
+        print ("\n");
+        print $mesh; //pCube
+        print ("\n");
+        string $shapes[] = `listRelatives -s -path $mesh`;
+        print $shapes[0]; //pCubeShape
+        print ("\n");
+        
+        string $parents[] = `listRelatives -allParents $mesh`;
+        print $parents[0];
+        
+        string $test = updateHappened();
+    
+        select $mesh;
+        addAttr -ln "tileType"  -at "enum" -en ($test + ":") $shapes[0];
+        addAttr -ln "tileType"  -at "enum" -en ($test + ":") $mesh;
+        
+        if(printChoice1())
+        {
+        addAttr -ln "walkable"  -at "enum" -en "Yes:" $shapes[0];
+        addAttr -ln "walkable"  -at "enum" -en "Yes:" $mesh;
+        }
+        else
+        {
+        addAttr -ln "walkable"  -at "enum" -en "No:" $shapes[0];
+        addAttr -ln "walkable"  -at "enum" -en "No:" $mesh;   
+        }
+        
+        if(printChoice2())
+        {
+        addAttr -ln "entrance"  -at "enum" -en "Yes:" $shapes[0];
+        addAttr -ln "entrance"  -at "enum" -en "Yes:" $mesh;
+        }
+        else
+        {
+        addAttr -ln "entrance"  -at "enum" -en "No:" $shapes[0];
+        addAttr -ln "entrance"  -at "enum" -en "No:" $mesh;    
+        }
+        
+        if(printChoice3())
+        {
+        addAttr -ln "goal"  -at "enum" -en "Yes:" $shapes[0];
+        addAttr -ln "goal"  -at "enum" -en "Yes:" $mesh;
+        }
+        else
+        {
+        addAttr -ln "goal"  -at "enum" -en "No:" $shapes[0];
+        addAttr -ln "goal"  -at "enum" -en "No:" $mesh;
+        }
+    }
+}
+
+global proc fixPivot()  
+{
+$mySelection = `ls -sl -type "transform"`;
+string $mesh;
+//clean history and center pivot just in case
+for ($mesh in $mySelection) 
+{
+DeleteHistory;
+CenterPivot;
+}
+for ($mesh in $mySelection) 
+{
+    
+//get bbox
+float $meshBB[] = `xform -q -ws -bb $mesh`; 
+//center pivot
+xform -ws -p true -cp $mesh; 
+float $centerPos[] = `xform -q -ws -sp $mesh`;
+//move Pivot to bottom, but keep in center
+xform -ws -piv $centerPos[0] $meshBB[1] $centerPos[2] $mesh; 
+}
+}
+
+global proc string updateHappened()
+{
+global string $textfield1;
+  
+string $v = `textFieldGrp -q -text $textfield1`;
+print("You Changed Textfield to: \"" + $v + "\"\n");
+
+return $v;
+}
+
+
+global proc int printChoice1() 
+{
+  global int $walkableBool;
+  int $selected = `radioButtonGrp -q -select walkChoice`;
+  if ( $selected == 1 ) 
+  {
+    $walkableBool = 1;
+  } else if ( $selected == 2 )
+   {
+    $walkableBool = 0;
+ 
+}
+return $walkableBool;
+}
+
+global proc int printChoice2() 
+{
+  global int $entranceBool;
+  int $selected = `radioButtonGrp -q -select entranceChoice`;
+  if ( $selected == 1 ) 
+  {
+    $entranceBool = 1;
+  } else if ( $selected == 2 )
+   {
+    $entranceBool = 0;
+ 
+}
+return $entranceBool;
+}
+
+global proc int printChoice3() 
+{
+  global int $goalBool;
+  int $selected = `radioButtonGrp -q -select goalChoice`;
+  if ( $selected == 1 ) 
+  {
+    $goalBool = 1;
+  } else if ( $selected == 2 )
+   {
+    $goalBool = 0;
+ 
+}
+return $goalBool;
+};
