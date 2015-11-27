@@ -34,6 +34,7 @@
 #include <maya/MPxPolyTrg.h>
 #include <maya/MDGModifier.h>
 #include <maya/MFnEnumAttribute.h>
+#include <maya\MFileIO.h>
 
 
 #include <maya/MItDependencyGraph.h>
