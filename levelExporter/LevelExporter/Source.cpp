@@ -24,19 +24,6 @@ void deleteUI();
 void exportLevelData();
 void exportToFile(std::vector<std::string> formattedLevelData);
 
-//Map Data:
-struct mapData
-{
-	string modelID;
-	int posX;
-	int posZ;
-	MEulerRotation eulerRotation;
-	string tileType;
-	bool walkable;
-	bool entrance;
-	bool goal;
-};
-
 class exportLevel : public MPxCommand
 {
 public:
