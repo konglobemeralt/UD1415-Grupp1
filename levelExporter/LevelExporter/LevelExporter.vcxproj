@@ -133,7 +133,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="maya_includes.h" />
-    <ClInclude Include="Structs.h" />
+    <ClInclude Include="overHead.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp" />

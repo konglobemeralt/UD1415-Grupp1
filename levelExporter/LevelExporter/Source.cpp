@@ -1,14 +1,5 @@
 #include "maya_includes.h"
-#include "Structs.h"
-#include <iostream>
-#include <fstream>
-#include <DirectXMath.h>
-#include <Windows.h>
-#include <shlobj.h>
-#include <direct.h>
-#include <string>
-#include <vector>
-#include <stdlib.h>
+#include "overHead.h"
 // basic file operations
 
 using namespace DirectX;
@@ -119,9 +110,14 @@ void exportLevelData()
 	MItDag itMeshes(MItDag::kDepthFirst, MFn::kMesh);
 
 	//Level Header
-	float version = 1.0;
+	int version = 10;
 	int levelSIzeX = 0;
 	int levelSIzeY = 0;
+
+	int levelSIzeXmax = 0;
+	int levelSIzeXmin = 0;
+	int levelSIzeYmax = 0;
+	int levelSIzeYmin = 0;
 
 	//mapData
 	std::vector<mapData> mData;
@@ -132,14 +128,6 @@ void exportLevelData()
 	{
 		MFnMesh meshTemp = itMeshes.currentItem();
 		MFnTransform transformTemp = meshTemp.parent(0);
-
-		//
-		//MObject test = transformTemp.attribute("tileType");
-		//MFn::kEnumAttribute;
-		//MFnEnumAttribute enumTest = test;
-		//MString attributeName = enumTest.name();
-
-		//MGlobal::displayInfo(attributeName);
 
 		//Name
 		MString Meshname = meshTemp.name();
@@ -153,35 +141,53 @@ void exportLevelData()
 
 		tPosition = transformTemp.translation(MSpace::kTransform);
 
-		int coordX = (int)(tPosition.x + EPS);
-		int coordZ = (int)(tPosition.z + EPS);
+		int coordX = 0;
+		if (tPosition.x < 0) {
+			coordX = (int)(tPosition.x - EPS);
+		}
+		else {
+			coordX = (int)(tPosition.x + EPS);
+		}
 
-		if (coordX < 0 || coordZ < 0)
-		{
-			cout << "A gameObject:" + Meshname + " is out of bounds.";
+		int coordZ = 0;
+		if (tPosition.z < 0) {
+			coordZ = (int)(tPosition.z - EPS);
+		}
+		else {
+			coordZ = (int)(tPosition.z + EPS);
 		}
 
 		//Grid size
-		if (levelSIzeX < coordX)
-			levelSIzeX = coordX;
-		if (levelSIzeY < coordZ)
-			levelSIzeY = coordZ;
+
+		//Maximum grid
+		if (levelSIzeXmax < coordX)
+		{
+			levelSIzeXmax = coordX;
+		}
+		if (levelSIzeYmax < coordZ)
+		{
+			levelSIzeYmax = coordZ;
+		}
+
+		//Minimum grid
+		if (levelSIzeXmin > coordX)
+		{
+			levelSIzeXmin = coordX;
+		}
+		if (levelSIzeYmin > coordZ)
+		{
+			levelSIzeYmin = coordZ;
+		}
 
 		//Rotation
 		MEulerRotation eulerRotation;
 		transformTemp.getRotation(eulerRotation);
 
-		//MGlobal::displayInfo(MString() + meshTemp.name());
-		//MGlobal::displayInfo(MString() + "Translation: " + tPosition.x + " " + tPosition.y + " " + tPosition.z);
-		//MGlobal::displayInfo(MString() + "Tiles: " + coordX + " " + coordY);
-		//MGlobal::displayInfo(MString() + "Rotation: " + eulerRotation.x + " " + eulerRotation.y + " " + eulerRotation.z);
-
 		//Mapping the data
 		mData.push_back(mapData());
-		mData.back().modelID = tname;
 		mData.back().posX = coordX;
 		mData.back().posZ = coordZ;
-		mData.back().eulerRotation = eulerRotation;
+		mData.back().rotY = eulerRotation.y;
 
 		//Extracting enums
 		if (transformTemp.hasAttribute("tileType"))
@@ -217,62 +223,66 @@ void exportLevelData()
 				mData.back().walkable = false;
 			}
 		}
-		if (transformTemp.hasAttribute("entrance"))
-		{
-			//find if entrance or not
-			MFnEnumAttribute entranceEnum = transformTemp.attribute("entrance");
-			MGlobal::displayInfo("has entrance attr");
+		//if (transformTemp.hasAttribute("entrance"))
+		//{
+		//	//find if entrance or not
+		//	MFnEnumAttribute entranceEnum = transformTemp.attribute("entrance");
+		//	MGlobal::displayInfo("has entrance attr");
 
-			MString answer = entranceEnum.fieldName(0);
+		//	MString answer = entranceEnum.fieldName(0);
 
-			if (!strcmp(answer.asChar(), "Yes"))
-			{
-				MGlobal::displayInfo("entrance: yes");
-				mData.back().entrance = true;
-			}
-			if (!strcmp(answer.asChar(), "No"))
-			{
-				MGlobal::displayInfo("entrance: no");
-				mData.back().entrance = false;
-			}
-		}
-		if (transformTemp.hasAttribute("goal"))
-		{
-			//find if goal or not
-			MFnEnumAttribute goalEnum = transformTemp.attribute("goal");
-			MGlobal::displayInfo("has goal attr");
-			MString answer = goalEnum.fieldName(0);
+		//	if (!strcmp(answer.asChar(), "Yes"))
+		//	{
+		//		MGlobal::displayInfo("entrance: yes");
+		//		mData.back().entrance = true;
+		//	}
+		//	if (!strcmp(answer.asChar(), "No"))
+		//	{
+		//		MGlobal::displayInfo("entrance: no");
+		//		mData.back().entrance = false;
+		//	}
+		//}
+		//if (transformTemp.hasAttribute("goal"))
+		//{
+		//	//find if goal or not
+		//	MFnEnumAttribute goalEnum = transformTemp.attribute("goal");
+		//	MGlobal::displayInfo("has goal attr");
+		//	MString answer = goalEnum.fieldName(0);
 
-			if (!strcmp(answer.asChar(), "Yes"))
-			{
-				MGlobal::displayInfo("goal: yes");
-				mData.back().goal = true;
-			}
-			if (!strcmp(answer.asChar(), "No"))
-			{
-				MGlobal::displayInfo("goal: no");
-				mData.back().goal = false;
-			}
-		}
+		//	if (!strcmp(answer.asChar(), "Yes"))
+		//	{
+		//		MGlobal::displayInfo("goal: yes");
+		//		mData.back().goal = true;
+		//	}
+		//	if (!strcmp(answer.asChar(), "No"))
+		//	{
+		//		MGlobal::displayInfo("goal: no");
+		//		mData.back().goal = false;
+		//	}
+		//}
 
 		itMeshes.next();
 	}
+
+	levelSIzeX = (levelSIzeXmax - levelSIzeXmin) + 1;
+	levelSIzeY = (levelSIzeYmax - levelSIzeYmin) + 1;
 
 	//Translating and exporting--------------------------
 	formattedOutput += "Version,";
 	formattedOutput += std::to_string(version);
 	formattedOutput += "\nlevelSizeX," + std::to_string(levelSIzeX);
 	formattedOutput += "\nlevelSizeY," + std::to_string(levelSIzeY);
+	formattedOutput += "\nPosX,PosY,RotY,Tiletype(ID),Walkable";
 	for (auto i : mData)
 	{
 		formattedOutput += "\n";
 		formattedOutput += std::to_string(i.posX) + "," + std::to_string(i.posZ);
 		formattedOutput += ",";
-		formattedOutput += std::to_string(i.eulerRotation.y);
+		formattedOutput += std::to_string(i.rotY);
 		formattedOutput += "," + i.tileType;
 		formattedOutput += "," + std::to_string(i.walkable);
-		formattedOutput += "," + std::to_string(i.entrance);
-		formattedOutput += "," + std::to_string(i.goal);
+		//formattedOutput += "," + std::to_string(i.entrance);
+		//formattedOutput += "," + std::to_string(i.goal);
 	}
 
 	formattedLevelData.push_back(formattedOutput);
@@ -286,7 +296,7 @@ void exportToFile(std::vector<std::string> formattedLevelData)
 
 	char userPath[MAX_PATH];
 	SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);
-	outputPath = (string)userPath + "\\Desktop\\ExportedLevels";
+	outputPath = (string)userPath + "\\Google Drive\\Stort spelprojekt\\ExportedLevels";
 	ofstream outputFile;
 	_mkdir(outputPath.c_str());
 	outputPath += "\\" + levelName;
@@ -295,7 +305,7 @@ void exportToFile(std::vector<std::string> formattedLevelData)
 
 	for (std::string formattedOutput : formattedLevelData)
 	{
-		outputFile << formattedOutput << std::endl;
+		outputFile << formattedOutput;
 	}
 
 	outputFile.close();
