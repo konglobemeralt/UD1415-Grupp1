@@ -11,12 +11,22 @@
 
 using namespace std;
 
+struct levelHeader
+{
+	int version;
+	int levelSIzeX;
+	int levelSIzeY;
+	int nrOfTileObjects;
+};
+
 //Map Data:
 struct mapData
 {
 	int posX;
 	int posZ;
 	float rotY;
-	string tileType;
+	//Change comment of tileType
+	//string tileType
+	int tileType;
 	bool walkable;
 };

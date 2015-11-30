@@ -6,6 +6,8 @@ using namespace DirectX;
 using namespace std;
 
 static const float EPS = 0.1f;
+//Uncomment for txt file--------------------------------------
+//std::vector<std::string> formattedLevelData;
 
 //UI
 void initUI();
@@ -13,7 +15,7 @@ void deleteUI();
 
 //export
 void exportLevelData();
-void exportToFile(std::vector<std::string> formattedLevelData);
+void exportToFile(levelHeader, vector<mapData>);
 
 class exportLevel : public MPxCommand
 {
@@ -99,20 +101,21 @@ void deleteUI()
 
 void exportLevelData()
 {
+	//For txt file, uncomment below
 	//Initalizing-----------------------------------
-	std::vector<std::string> formattedLevelData;
-	formattedLevelData.clear();
-
-	std::string formattedOutput;
+	//formattedLevelData.clear();
+	//std::string formattedOutput;
 
 	MGlobal::displayInfo("Export level");
 
 	MItDag itMeshes(MItDag::kDepthFirst, MFn::kMesh);
 
 	//Level Header
-	int version = 10;
-	int levelSIzeX = 0;
-	int levelSIzeY = 0;
+	levelHeader lvlHead;
+	lvlHead.version = 10;
+	lvlHead.levelSIzeX = 0;
+	lvlHead.levelSIzeY = 0;
+	lvlHead.nrOfTileObjects = 0;
 
 	int levelSIzeXmax = 0;
 	int levelSIzeXmin = 0;
@@ -122,8 +125,7 @@ void exportLevelData()
 	//mapData
 	std::vector<mapData> mData;
 
-	//Do work----------------------------------------
-
+	//Find all valuable data----------------------------------------
 	while (!itMeshes.isDone())
 	{
 		MFnMesh meshTemp = itMeshes.currentItem();
@@ -158,7 +160,6 @@ void exportLevelData()
 		}
 
 		//Grid size
-
 		//Maximum grid
 		if (levelSIzeXmax < coordX)
 		{
@@ -198,10 +199,12 @@ void exportLevelData()
 
 			MString tileType = tileEnum.fieldName(0);
 
+			//TODO: Loop this with the id/name data file
 			if (!strcmp(tileType.asChar(), "floorTile"))
 			{
 				MGlobal::displayInfo("tile says " + tileType);
-				mData.back().tileType = tileType.asChar();
+				//mData.back().tileType = tileType.asChar();
+				mData.back().tileType = 1;
 			}
 		}
 		if (transformTemp.hasAttribute("walkable"))
@@ -261,35 +264,38 @@ void exportLevelData()
 		//	}
 		//}
 
+		lvlHead.nrOfTileObjects++;
 		itMeshes.next();
 	}
 
-	levelSIzeX = (levelSIzeXmax - levelSIzeXmin) + 1;
-	levelSIzeY = (levelSIzeYmax - levelSIzeYmin) + 1;
+	lvlHead.levelSIzeX = (levelSIzeXmax - levelSIzeXmin) + 1;
+	lvlHead.levelSIzeY = (levelSIzeYmax - levelSIzeYmin) + 1;
 
+	//For txt file, uncomment below (Remember to change tiletype to string in overHead.h)
 	//Translating and exporting--------------------------
-	formattedOutput += "Version,";
-	formattedOutput += std::to_string(version);
-	formattedOutput += "\nlevelSizeX," + std::to_string(levelSIzeX);
-	formattedOutput += "\nlevelSizeY," + std::to_string(levelSIzeY);
-	formattedOutput += "\nPosX,PosY,RotY,Tiletype(ID),Walkable";
-	for (auto i : mData)
-	{
-		formattedOutput += "\n";
-		formattedOutput += std::to_string(i.posX) + "," + std::to_string(i.posZ);
-		formattedOutput += ",";
-		formattedOutput += std::to_string(i.rotY);
-		formattedOutput += "," + i.tileType;
-		formattedOutput += "," + std::to_string(i.walkable);
-		//formattedOutput += "," + std::to_string(i.entrance);
-		//formattedOutput += "," + std::to_string(i.goal);
-	}
+	//formattedOutput += "Version,";
+	//formattedOutput += std::to_string(lvlHead.version);
+	//formattedOutput += "\nlevelSizeX," + std::to_string(lvlHead.levelSIzeX);
+	//formattedOutput += "\nlevelSizeY," + std::to_string(lvlHead.levelSIzeY);
+	//formattedOutput += "\nPosX,PosY,RotY,Tiletype(ID),Walkable";
+	//for (auto i : mData)
+	//{
+	//	formattedOutput += "\n";
+	//	formattedOutput += std::to_string(i.posX) + "," + std::to_string(i.posZ);
+	//	formattedOutput += ",";
+	//	formattedOutput += std::to_string(i.rotY);
+	//	//formattedOutput += "," + i.tileType;
+	//	formattedOutput += "," + std::to_string(1);
+	//	formattedOutput += "," + std::to_string(i.walkable);
+	//	//formattedOutput += "," + std::to_string(i.entrance);
+	//	//formattedOutput += "," + std::to_string(i.goal);
+	//}
 
-	formattedLevelData.push_back(formattedOutput);
-	exportToFile(formattedLevelData);
+	//formattedLevelData.push_back(formattedOutput);
+	exportToFile(lvlHead, mData);
 }
 
-void exportToFile(std::vector<std::string> formattedLevelData)
+void exportToFile(levelHeader lvlHead, vector<mapData> mData)
 {
 	string outputPath;
 	string levelName = "level1.lvl";
@@ -301,12 +307,23 @@ void exportToFile(std::vector<std::string> formattedLevelData)
 	_mkdir(outputPath.c_str());
 	outputPath += "\\" + levelName;
 
-	outputFile.open(outputPath, ios::out);
+	//To change to txt file--------------------------------
+	//Comment/remove binary
+	outputFile.open(outputPath, ios::out | ios::binary);
 
-	for (std::string formattedOutput : formattedLevelData)
+	//Comment below
+	outputFile.write((const char*)&lvlHead, sizeof(lvlHead));
+
+	for (auto md : mData)
 	{
-		outputFile << formattedOutput;
+		outputFile.write((const char*)&md, sizeof(mapData));
 	}
+
+	//Uncomment this section and comment above
+	//for (std::string formattedOutput : formattedLevelData)
+	//{
+	//	outputFile << formattedOutput;
+	//}
 
 	outputFile.close();
 }
