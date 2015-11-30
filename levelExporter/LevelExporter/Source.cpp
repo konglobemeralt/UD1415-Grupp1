@@ -125,6 +125,8 @@ void exportLevelData()
 	//mapData
 	std::vector<mapData> mData;
 
+	int minX = 0, minY = 0;
+
 	//Find all valuable data----------------------------------------
 	while (!itMeshes.isDone())
 	{
@@ -267,6 +269,12 @@ void exportLevelData()
 
 		lvlHead.nrOfTileObjects++;
 		itMeshes.next();
+	}
+
+	for (int i = 0; i < mData.size(); i++)
+	{
+		mData[i].posX -= levelSIzeXmin;
+		mData[i].posZ -= levelSIzeYmin;
 	}
 
 	lvlHead.levelSIzeX = (levelSIzeXmax - levelSIzeXmin) + 1;
