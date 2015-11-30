@@ -101,8 +101,8 @@ void deleteUI()
 
 void exportLevelData()
 {
-	//For txt file, uncomment below
-	//Initalizing-----------------------------------
+	////For txt file, uncomment below-----------------
+	////Initalizing-----------------------------------
 	//formattedLevelData.clear();
 	//std::string formattedOutput;
 
@@ -199,10 +199,11 @@ void exportLevelData()
 
 			MString tileType = tileEnum.fieldName(0);
 
-			//TODO: Loop this with the id/name data file
+			//ID/Data file names
 			if (!strcmp(tileType.asChar(), "floorTile"))
 			{
 				MGlobal::displayInfo("tile says " + tileType);
+				////Change comment between the two below----------------------------------------
 				//mData.back().tileType = tileType.asChar();
 				mData.back().tileType = 1;
 			}
@@ -271,8 +272,8 @@ void exportLevelData()
 	lvlHead.levelSIzeX = (levelSIzeXmax - levelSIzeXmin) + 1;
 	lvlHead.levelSIzeY = (levelSIzeYmax - levelSIzeYmin) + 1;
 
-	//For txt file, uncomment below (Remember to change tiletype to string in overHead.h)
-	//Translating and exporting--------------------------
+	////For txt file, uncomment below (Remember to change tiletype to string in overHead.h)
+	////Translating and exporting--------------------------
 	//formattedOutput += "Version,";
 	//formattedOutput += std::to_string(lvlHead.version);
 	//formattedOutput += "\nlevelSizeX," + std::to_string(lvlHead.levelSIzeX);
@@ -284,8 +285,10 @@ void exportLevelData()
 	//	formattedOutput += std::to_string(i.posX) + "," + std::to_string(i.posZ);
 	//	formattedOutput += ",";
 	//	formattedOutput += std::to_string(i.rotY);
-	//	//formattedOutput += "," + i.tileType;
-	//	formattedOutput += "," + std::to_string(1);
+
+	//	//Change between the two i.tileType--------------
+	//	formattedOutput += "," + i.tileType;
+	//	//formattedOutput += "," + std::to_string(i.tileType);
 	//	formattedOutput += "," + std::to_string(i.walkable);
 	//	//formattedOutput += "," + std::to_string(i.entrance);
 	//	//formattedOutput += "," + std::to_string(i.goal);
@@ -319,7 +322,7 @@ void exportToFile(levelHeader lvlHead, vector<mapData> mData)
 		outputFile.write((const char*)&md, sizeof(mapData));
 	}
 
-	//Uncomment this section and comment above
+	//Uncomment this section and comment above--------------
 	//for (std::string formattedOutput : formattedLevelData)
 	//{
 	//	outputFile << formattedOutput;

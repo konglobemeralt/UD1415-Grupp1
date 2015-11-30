@@ -26,7 +26,7 @@ struct mapData
 	int posZ;
 	float rotY;
 	//Change comment of tileType
-	//string tileType
+	//string tileType;
 	int tileType;
 	bool walkable;
 };
