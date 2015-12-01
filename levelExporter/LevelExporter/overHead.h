@@ -30,3 +30,15 @@ struct mapData
 	int tileType;
 	bool walkable;
 };
+
+//Map Data for txt files:
+struct mapDataString
+{
+	int posX;
+	int posZ;
+	float rotY;
+	//Change comment of tileType
+	string tileType;
+	//int tileType;
+	bool walkable;
+};

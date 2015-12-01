@@ -7,7 +7,7 @@ using namespace std;
 
 static const float EPS = 0.1f;
 //Uncomment for txt file--------------------------------------
-//std::vector<std::string> formattedLevelData;
+std::vector<std::string> formattedLevelData;
 
 //UI
 void initUI();
@@ -16,6 +16,7 @@ void deleteUI();
 //export
 void exportLevelData();
 void exportToFile(levelHeader, vector<mapData>);
+void exportStrToFile();
 
 class exportLevel : public MPxCommand
 {
@@ -103,8 +104,8 @@ void exportLevelData()
 {
 	////For txt file, uncomment below-----------------
 	////Initalizing-----------------------------------
-	//formattedLevelData.clear();
-	//std::string formattedOutput;
+	formattedLevelData.clear();
+	std::string formattedOutput;
 
 	MGlobal::displayInfo("Export level");
 
@@ -124,6 +125,8 @@ void exportLevelData()
 
 	//mapData
 	std::vector<mapData> mData;
+	std::vector<mapDataString> mDataString;
+
 
 	int minX = 0, minY = 0;
 
@@ -193,6 +196,12 @@ void exportLevelData()
 		mData.back().posZ = coordZ;
 		mData.back().rotY = eulerRotation.y;
 
+		mDataString.push_back(mapDataString());
+		mDataString.back().posX = coordX;
+		mDataString.back().posZ = coordZ;
+		mDataString.back().rotY = eulerRotation.y;
+
+
 		//Extracting enums
 		if (transformTemp.hasAttribute("tileType"))
 		{
@@ -207,7 +216,7 @@ void exportLevelData()
 			{
 				MGlobal::displayInfo("tile says " + tileType);
 				////Change comment between the two below----------------------------------------
-				//mData.back().tileType = tileType.asChar();
+				mDataString.back().tileType = tileType.asChar();
 				mData.back().tileType = 1;
 			}
 		}
@@ -222,11 +231,14 @@ void exportLevelData()
 			if (!strcmp(answer.asChar(), "Yes"))
 			{
 				MGlobal::displayInfo("walkable: yes");
+				mDataString.back().walkable = true;
 				mData.back().walkable = true;
+
 			}
 			if (!strcmp(answer.asChar(), "No"))
 			{
 				MGlobal::displayInfo("walkable: no");
+				mDataString.back().walkable = false;
 				mData.back().walkable = false;
 			}
 		}
@@ -276,35 +288,43 @@ void exportLevelData()
 	{
 		mData[i].posX -= levelSizeXmin;
 		mData[i].posZ -= levelSizeYmin;
+
+	}
+	for (int i = 0; i < mData.size(); i++)
+	{
+		mDataString[i].posX -= levelSizeXmin;
+		mDataString[i].posZ -= levelSizeYmin;
 	}
 
 	lvlHead.levelSizeX = (levelSizeXmax - levelSizeXmin) + 1;
 	lvlHead.levelSizeY = (levelSizeYmax - levelSizeYmin) + 1;
 
-	////For txt file, uncomment below (Remember to change tiletype to string in overHead.h)
-	////Translating and exporting--------------------------
-	//formattedOutput += "Version,";
-	//formattedOutput += std::to_string(lvlHead.version);
-	//formattedOutput += "\nlevelSizeX," + std::to_string(lvlHead.levelSIzeX);
-	//formattedOutput += "\nlevelSizeY," + std::to_string(lvlHead.levelSIzeY);
-	//formattedOutput += "\nPosX,PosY,RotY,Tiletype(ID),Walkable";
-	//for (auto i : mData)
-	//{
-	//	formattedOutput += "\n";
-	//	formattedOutput += std::to_string(i.posX) + "," + std::to_string(i.posZ);
-	//	formattedOutput += ",";
-	//	formattedOutput += std::to_string(i.rotY);
+	//For txt file, uncomment below (Remember to change tiletype to string in overHead.h)
+	//Translating and exporting--------------------------
+	formattedOutput += "Version,";
+	formattedOutput += std::to_string(lvlHead.version);
+	formattedOutput += "\nlevelSizeX," + std::to_string(lvlHead.levelSizeX);
+	formattedOutput += "\nlevelSizeY," + std::to_string(lvlHead.levelSizeY);
+	formattedOutput += "\nPosX,PosY,RotY,Tiletype(ID),Walkable";
+	for (auto i : mDataString)
+	{
+		formattedOutput += "\n";
+		formattedOutput += std::to_string(i.posX) + "," + std::to_string(i.posZ);
+		formattedOutput += ",";
+		formattedOutput += std::to_string(i.rotY);
 
-	//	//Change between the two i.tileType--------------
-	//	formattedOutput += "," + i.tileType;
-	//	//formattedOutput += "," + std::to_string(i.tileType);
-	//	formattedOutput += "," + std::to_string(i.walkable);
-	//	//formattedOutput += "," + std::to_string(i.entrance);
-	//	//formattedOutput += "," + std::to_string(i.goal);
-	//}
+		//Change between the two i.tileType--------------
+		formattedOutput += "," + i.tileType;
+		//formattedOutput += "," + std::to_string(i.tileType);
+		formattedOutput += "," + std::to_string(i.walkable);
+		//formattedOutput += "," + std::to_string(i.entrance);
+		//formattedOutput += "," + std::to_string(i.goal);
+	}
 
-	//formattedLevelData.push_back(formattedOutput);
+	formattedLevelData.push_back(formattedOutput);
+
 	exportToFile(lvlHead, mData);
+	exportStrToFile();
 }
 
 void exportToFile(levelHeader lvlHead, vector<mapData> mData)
@@ -339,4 +359,30 @@ void exportToFile(levelHeader lvlHead, vector<mapData> mData)
 
 	outputFile.close();
 }
+
+
+void exportStrToFile()
+{
+	string outputPath;
+	string levelName = "level1.lvltxt";
+
+	char userPath[MAX_PATH];
+	SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);
+	outputPath = (string)userPath + "\\Google Drive\\Stort spelprojekt\\ExportedLevels";
+	ofstream outputFile;
+	_mkdir(outputPath.c_str());
+	outputPath += "\\" + levelName;
+
+	//To change to txt file--------------------------------
+	//Comment/remove binary
+	outputFile.open(outputPath, ios::out);
+
+	for (std::string formattedOutput : formattedLevelData)
+	{
+		outputFile << formattedOutput;
+	}
+
+	outputFile.close();
+}
+
 
