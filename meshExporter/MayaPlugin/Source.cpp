@@ -260,7 +260,7 @@ vector<VertexOut> UnpackVertices(vector<Point> *points, vector<Normal> *normals,
 	vector<VertexOut> vertices;
 
 	for (int i = 0; i < vertexIndices->size(); i++) {
-		for (int a = 0; a < 3; a++) {
+		for (int a = 2; a > -1; a--) {
 			VertexOut tempVertex;
 			tempVertex.pos[0] = points->at(vertexIndices->at(i).verts[a].pointID).x;
 			tempVertex.pos[1] = points->at(vertexIndices->at(i).verts[a].pointID).y;
