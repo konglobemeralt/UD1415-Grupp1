@@ -215,30 +215,32 @@ void exportLevelData()
 			if (!strcmp(tileType.asChar(), "floorTile"))
 			{
 				MGlobal::displayInfo("tile says " + tileType);
-				////Change comment between the two below----------------------------------------
 				mDataString.back().tileType = tileType.asChar();
 				mData.back().tileType = 1;
 			}
 			else if (!strcmp(tileType.asChar(), "wallTile"))
 			{
 				MGlobal::displayInfo("tile says " + tileType);
-				////Change comment between the two below----------------------------------------
 				mDataString.back().tileType = tileType.asChar();
 				mData.back().tileType = 2;
 			}
 			else if (!strcmp(tileType.asChar(), "entryTile"))
 			{
 				MGlobal::displayInfo("tile says " + tileType);
-				////Change comment between the two below----------------------------------------
 				mDataString.back().tileType = tileType.asChar();
 				mData.back().tileType = 3;
 			}
 			else if (!strcmp(tileType.asChar(), "objectiveTile"))
 			{
 				MGlobal::displayInfo("tile says " + tileType);
-				////Change comment between the two below----------------------------------------
 				mDataString.back().tileType = tileType.asChar();
 				mData.back().tileType = 4;
+			}
+			else if (!strcmp(tileType.asChar(), "unit"))
+			{
+				MGlobal::displayInfo("tile says " + tileType);
+				mDataString.back().tileType = tileType.asChar();
+				mData.back().tileType = 5;
 			}
 		}
 		//if (transformTemp.hasAttribute("walkable"))
