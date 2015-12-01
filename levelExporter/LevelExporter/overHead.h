@@ -28,7 +28,7 @@ struct mapData
 	//Change comment of tileType
 	//string tileType;
 	int tileType;
-	bool walkable;
+	
 };
 
 //Map Data for txt files:
@@ -40,5 +40,4 @@ struct mapDataString
 	//Change comment of tileType
 	string tileType;
 	//int tileType;
-	bool walkable;
 };

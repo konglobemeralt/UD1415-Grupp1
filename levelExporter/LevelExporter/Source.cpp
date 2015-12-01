@@ -219,29 +219,50 @@ void exportLevelData()
 				mDataString.back().tileType = tileType.asChar();
 				mData.back().tileType = 1;
 			}
-		}
-		if (transformTemp.hasAttribute("walkable"))
-		{
-			//find if walkable or not
-			MFnEnumAttribute walkEnum = transformTemp.attribute("walkable");
-			MGlobal::displayInfo("has walkable attr");
-
-			MString answer = walkEnum.fieldName(0);
-
-			if (!strcmp(answer.asChar(), "Yes"))
+			else if (!strcmp(tileType.asChar(), "wallTile"))
 			{
-				MGlobal::displayInfo("walkable: yes");
-				mDataString.back().walkable = true;
-				mData.back().walkable = true;
-
+				MGlobal::displayInfo("tile says " + tileType);
+				////Change comment between the two below----------------------------------------
+				mDataString.back().tileType = tileType.asChar();
+				mData.back().tileType = 2;
 			}
-			if (!strcmp(answer.asChar(), "No"))
+			else if (!strcmp(tileType.asChar(), "entryTile"))
 			{
-				MGlobal::displayInfo("walkable: no");
-				mDataString.back().walkable = false;
-				mData.back().walkable = false;
+				MGlobal::displayInfo("tile says " + tileType);
+				////Change comment between the two below----------------------------------------
+				mDataString.back().tileType = tileType.asChar();
+				mData.back().tileType = 3;
+			}
+			else if (!strcmp(tileType.asChar(), "objectiveTile"))
+			{
+				MGlobal::displayInfo("tile says " + tileType);
+				////Change comment between the two below----------------------------------------
+				mDataString.back().tileType = tileType.asChar();
+				mData.back().tileType = 4;
 			}
 		}
+		//if (transformTemp.hasAttribute("walkable"))
+		//{
+		//	//find if walkable or not
+		//	MFnEnumAttribute walkEnum = transformTemp.attribute("walkable");
+		//	MGlobal::displayInfo("has walkable attr");
+
+		//	MString answer = walkEnum.fieldName(0);
+
+		//	if (!strcmp(answer.asChar(), "Yes"))
+		//	{
+		//		MGlobal::displayInfo("walkable: yes");
+		//		mDataString.back().walkable = true;
+		//		mData.back().walkable = true;
+
+		//	}
+		//	if (!strcmp(answer.asChar(), "No"))
+		//	{
+		//		MGlobal::displayInfo("walkable: no");
+		//		mDataString.back().walkable = false;
+		//		mData.back().walkable = false;
+		//	}
+		//}
 		//if (transformTemp.hasAttribute("entrance"))
 		//{
 		//	//find if entrance or not
@@ -305,7 +326,7 @@ void exportLevelData()
 	formattedOutput += std::to_string(lvlHead.version);
 	formattedOutput += "\nlevelSizeX," + std::to_string(lvlHead.levelSizeX);
 	formattedOutput += "\nlevelSizeY," + std::to_string(lvlHead.levelSizeY);
-	formattedOutput += "\nPosX,PosY,RotY,Tiletype(ID),Walkable";
+	formattedOutput += "\nPosX,PosY,RotY,Tiletype(ID)";
 	for (auto i : mDataString)
 	{
 		formattedOutput += "\n";
@@ -316,7 +337,7 @@ void exportLevelData()
 		//Change between the two i.tileType--------------
 		formattedOutput += "," + i.tileType;
 		//formattedOutput += "," + std::to_string(i.tileType);
-		formattedOutput += "," + std::to_string(i.walkable);
+		//formattedOutput += "," + std::to_string(i.walkable);
 		//formattedOutput += "," + std::to_string(i.entrance);
 		//formattedOutput += "," + std::to_string(i.goal);
 	}
