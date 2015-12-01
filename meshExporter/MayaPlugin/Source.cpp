@@ -560,7 +560,7 @@ void ExportFile(Mesh &mesh, std::string path)
 	meshHeader.subMeshID = 0;
 	meshHeader.numberPointLights = mesh.geometry.pointLights.size();
 	meshHeader.numberSpotLights = mesh.geometry.spotLights.size();
-	int toMesh = sizeof(MainHeader) + sizeof(MeshHeader) + meshHeader.nameLength;
+	int toMesh = sizeof(MainHeader) + sizeof(MeshHeader) + meshHeader.nameLength + (mainHeader.meshCount + 1) * 4;
 	outfile.write((char*)&toMesh, 4);
 	toMesh += meshHeader.numberOfVertices*sizeof(VertexOut) + meshHeader.numberPointLights * sizeof(PointLight) + meshHeader.numberSpotLights * sizeof(SpotLight);
 
