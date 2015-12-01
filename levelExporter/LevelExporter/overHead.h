@@ -14,8 +14,8 @@ using namespace std;
 struct levelHeader
 {
 	int version;
-	int levelSIzeX;
-	int levelSIzeY;
+	int levelSizeX;
+	int levelSizeY;
 	int nrOfTileObjects;
 };
 
