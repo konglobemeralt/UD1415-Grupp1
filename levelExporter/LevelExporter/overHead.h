@@ -25,8 +25,6 @@ struct mapData
 	int posX;
 	int posZ;
 	float rotY;
-	//Change comment of tileType
-	//string tileType;
 	int tileType;
 	
 };
@@ -37,7 +35,5 @@ struct mapDataString
 	int posX;
 	int posZ;
 	float rotY;
-	//Change comment of tileType
 	string tileType;
-	//int tileType;
 };

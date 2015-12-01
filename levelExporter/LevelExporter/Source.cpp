@@ -6,7 +6,6 @@ using namespace DirectX;
 using namespace std;
 
 static const float EPS = 0.1f;
-//Uncomment for txt file--------------------------------------
 std::vector<std::string> formattedLevelData;
 
 //UI
@@ -102,7 +101,6 @@ void deleteUI()
 
 void exportLevelData()
 {
-	////For txt file, uncomment below-----------------
 	////Initalizing-----------------------------------
 	formattedLevelData.clear();
 	std::string formattedOutput;
@@ -240,66 +238,7 @@ void exportLevelData()
 				mData.back().tileType = 5;
 			}
 		}
-		//if (transformTemp.hasAttribute("walkable"))
-		//{
-		//	//find if walkable or not
-		//	MFnEnumAttribute walkEnum = transformTemp.attribute("walkable");
-		//	MGlobal::displayInfo("has walkable attr");
-
-		//	MString answer = walkEnum.fieldName(0);
-
-		//	if (!strcmp(answer.asChar(), "Yes"))
-		//	{
-		//		MGlobal::displayInfo("walkable: yes");
-		//		mDataString.back().walkable = true;
-		//		mData.back().walkable = true;
-
-		//	}
-		//	if (!strcmp(answer.asChar(), "No"))
-		//	{
-		//		MGlobal::displayInfo("walkable: no");
-		//		mDataString.back().walkable = false;
-		//		mData.back().walkable = false;
-		//	}
-		//}
-		//if (transformTemp.hasAttribute("entrance"))
-		//{
-		//	//find if entrance or not
-		//	MFnEnumAttribute entranceEnum = transformTemp.attribute("entrance");
-		//	MGlobal::displayInfo("has entrance attr");
-
-		//	MString answer = entranceEnum.fieldName(0);
-
-		//	if (!strcmp(answer.asChar(), "Yes"))
-		//	{
-		//		MGlobal::displayInfo("entrance: yes");
-		//		mData.back().entrance = true;
-		//	}
-		//	if (!strcmp(answer.asChar(), "No"))
-		//	{
-		//		MGlobal::displayInfo("entrance: no");
-		//		mData.back().entrance = false;
-		//	}
-		//}
-		//if (transformTemp.hasAttribute("goal"))
-		//{
-		//	//find if goal or not
-		//	MFnEnumAttribute goalEnum = transformTemp.attribute("goal");
-		//	MGlobal::displayInfo("has goal attr");
-		//	MString answer = goalEnum.fieldName(0);
-
-		//	if (!strcmp(answer.asChar(), "Yes"))
-		//	{
-		//		MGlobal::displayInfo("goal: yes");
-		//		mData.back().goal = true;
-		//	}
-		//	if (!strcmp(answer.asChar(), "No"))
-		//	{
-		//		MGlobal::displayInfo("goal: no");
-		//		mData.back().goal = false;
-		//	}
-		//}
-
+		
 		lvlHead.nrOfTileObjects++;
 		itMeshes.next();
 	}
@@ -319,7 +258,7 @@ void exportLevelData()
 	lvlHead.levelSizeX = (levelSizeXmax - levelSizeXmin) + 1;
 	lvlHead.levelSizeY = (levelSizeYmax - levelSizeYmin) + 1;
 
-	//For txt file, uncomment below (Remember to change tiletype to string in overHead.h)
+	//For txt file,
 	//Translating and exporting--------------------------
 	formattedOutput += "Version,";
 	formattedOutput += std::to_string(lvlHead.version);
@@ -333,12 +272,8 @@ void exportLevelData()
 		formattedOutput += ",";
 		formattedOutput += std::to_string(i.rotY);
 
-		//Change between the two i.tileType--------------
 		formattedOutput += "," + i.tileType;
-		//formattedOutput += "," + std::to_string(i.tileType);
-		//formattedOutput += "," + std::to_string(i.walkable);
-		//formattedOutput += "," + std::to_string(i.entrance);
-		//formattedOutput += "," + std::to_string(i.goal);
+
 	}
 
 	formattedLevelData.push_back(formattedOutput);
@@ -359,23 +294,14 @@ void exportToFile(levelHeader lvlHead, vector<mapData> mData)
 	_mkdir(outputPath.c_str());
 	outputPath += "\\" + levelName;
 
-	//To change to txt file--------------------------------
-	//Comment/remove binary
 	outputFile.open(outputPath, ios::out | ios::binary);
 
-	//Comment below
 	outputFile.write((const char*)&lvlHead, sizeof(lvlHead));
 
 	for (auto md : mData)
 	{
 		outputFile.write((const char*)&md, sizeof(mapData));
 	}
-
-	//Uncomment this section and comment above--------------
-	//for (std::string formattedOutput : formattedLevelData)
-	//{
-	//	outputFile << formattedOutput;
-	//}
 
 	outputFile.close();
 }
@@ -393,8 +319,7 @@ void exportStrToFile()
 	_mkdir(outputPath.c_str());
 	outputPath += "\\" + levelName;
 
-	//To change to txt file--------------------------------
-	//Comment/remove binary
+
 	outputFile.open(outputPath, ios::out);
 
 	for (std::string formattedOutput : formattedLevelData)
