@@ -108,19 +108,19 @@ void exportLevelData()
 
 	MGlobal::displayInfo("Export level");
 
-	MItDag itMeshes(MItDag::kDepthFirst, MFn::kMesh);
+	
 
 	//Level Header
 	levelHeader lvlHead;
 	lvlHead.version = 10;
-	lvlHead.levelSIzeX = 0;
-	lvlHead.levelSIzeY = 0;
+	lvlHead.levelSizeX = 0;
+	lvlHead.levelSizeY = 0;
 	lvlHead.nrOfTileObjects = 0;
 
-	int levelSIzeXmax = 0;
-	int levelSIzeXmin = 0;
-	int levelSIzeYmax = 0;
-	int levelSIzeYmin = 0;
+	int levelSizeXmax = 0;
+	int levelSizeXmin = 0;
+	int levelSizeYmax = 0;
+	int levelSizeYmin = 0;
 
 	//mapData
 	std::vector<mapData> mData;
@@ -128,6 +128,7 @@ void exportLevelData()
 	int minX = 0, minY = 0;
 
 	//Find all valuable data----------------------------------------
+	MItDag itMeshes(MItDag::kDepthFirst, MFn::kMesh);
 	while (!itMeshes.isDone())
 	{
 		MFnMesh meshTemp = itMeshes.currentItem();
@@ -163,23 +164,23 @@ void exportLevelData()
 
 		//Grid size
 		//Maximum grid
-		if (levelSIzeXmax < coordX)
+		if (levelSizeXmax < coordX)
 		{
-			levelSIzeXmax = coordX;
+			levelSizeXmax = coordX;
 		}
-		if (levelSIzeYmax < coordZ)
+		if (levelSizeYmax < coordZ)
 		{
-			levelSIzeYmax = coordZ;
+			levelSizeYmax = coordZ;
 		}
 
 		//Minimum grid
-		if (levelSIzeXmin > coordX)
+		if (levelSizeXmin > coordX)
 		{
-			levelSIzeXmin = coordX;
+			levelSizeXmin = coordX;
 		}
-		if (levelSIzeYmin > coordZ)
+		if (levelSizeYmin > coordZ)
 		{
-			levelSIzeYmin = coordZ;
+			levelSizeYmin = coordZ;
 		}
 
 		//Rotation
@@ -273,12 +274,12 @@ void exportLevelData()
 
 	for (int i = 0; i < mData.size(); i++)
 	{
-		mData[i].posX -= levelSIzeXmin;
-		mData[i].posZ -= levelSIzeYmin;
+		mData[i].posX -= levelSizeXmin;
+		mData[i].posZ -= levelSizeYmin;
 	}
 
-	lvlHead.levelSIzeX = (levelSIzeXmax - levelSIzeXmin) + 1;
-	lvlHead.levelSIzeY = (levelSIzeYmax - levelSIzeYmin) + 1;
+	lvlHead.levelSizeX = (levelSizeXmax - levelSizeXmin) + 1;
+	lvlHead.levelSizeY = (levelSizeYmax - levelSizeYmin) + 1;
 
 	////For txt file, uncomment below (Remember to change tiletype to string in overHead.h)
 	////Translating and exporting--------------------------
