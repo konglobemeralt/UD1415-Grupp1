@@ -127,9 +127,6 @@ void exportLevelData()
 	std::vector<mapData> mData;
 	std::vector<mapDataString> mDataString;
 
-
-	int minX = 0, minY = 0;
-
 	//Find all valuable data----------------------------------------
 	MItDag itMeshes(MItDag::kDepthFirst, MFn::kMesh);
 	while (!itMeshes.isDone())
