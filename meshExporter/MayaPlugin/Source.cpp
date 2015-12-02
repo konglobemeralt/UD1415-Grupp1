@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <stdlib.h>
+#include <shlobj.h>
 
 
 using namespace DirectX;
@@ -537,7 +538,9 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 		subMeshes.next();
 	}
 
-	ExportFile(primaryMesh, "C:/New folder/" + primaryMesh.Name + ".bin");//Kanske ha en dialog i fönstret?
+	char userPath[MAX_PATH];
+	SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);
+	ExportFile(primaryMesh, (string)userPath + "/Google Drive/Stort spelprojekt/ExportedModels/" + primaryMesh.Name + ".bin");//Kanske ha en dialog i fönstret?
 	return false;
 
 
