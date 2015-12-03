@@ -21,13 +21,10 @@ snapMode -grid true;
           -numberOfColumns 2 
           -columnWidth2 120 120
           -columnAlign2 "left" "left";
-			button -w 120 -h 50 -label"Rotate 90 L"  -command "rotateR";
-			button -w 120 -h 50 -label"Rotate 90 R"  -command "rotateL";
+			button -w 120 -h 50 -label"Rotate 90 L"  -command "rotateL";
+			button -w 120 -h 50 -label"Rotate 90 R"  -command "rotateR";
 			
-			
-			
-
-			       				
+		    				
 	       	
 	       	
 	// show the window    	       	
