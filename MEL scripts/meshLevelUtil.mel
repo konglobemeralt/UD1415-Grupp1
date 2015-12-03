@@ -1,14 +1,33 @@
-string $window = `window -title "ImportObj"`;
+string $window = `window -title "LevelCreatorUtility"`;
 snapMode -grid true;
 	
 	
 	columnLayout mainColumn;
+	columnLayout -columnAttach "both" 5 -rowSpacing 5 -columnWidth 240;
 			// create  buttons
-			button -w 240 -h 50 -label"FloorTile"  -command "ImportFloorTile";
-			button -w 240 -h 50 -label "GoalTile" -command "ImportGoalTile";
+			
 			text -label "Username: ";
 					$textfield1 = `textFieldGrp -changeCommand "updateHappened()"
-                    -text "tempUserName"`;            				
+                    -text "tempUserName"`;   
+                    text -label "";  
+			
+			button -w 240 -h 50 -label"Floor Tile"  -command "ImportFloorTile";
+			button -w 240 -h 50 -label"Goal Tile" -command "ImportGoalTile";
+			button -w 240 -h 50 -label"Entry Tile"  -command "ImportEntryTile";
+			button -w 240 -h 50 -label"Wall Tile"  -command "ImportWallTile";
+			text -label "";  
+			 
+		    rowLayout 
+          -numberOfColumns 2 
+          -columnWidth2 120 120
+          -columnAlign2 "left" "left";
+			button -w 120 -h 50 -label"Rotate 90 L"  -command "rotateR";
+			button -w 120 -h 50 -label"Rotate 90 R"  -command "rotateL";
+			
+			
+			
+
+			       				
 	       	
 	       	
 	// show the window    	       	
@@ -30,6 +49,33 @@ global proc ImportGoalTile()
     string $test = updateHappened();
     string $path = "C:/Users/"+$test+"/Google Drive/Stort spelprojekt/MayaObjects/Objective.mb";
     file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Objective" -options "v=0;p=17;f=0"  -pr $path;
+    
+}
+
+global proc ImportEntryTile()  
+{
+    string $test = updateHappened();
+    string $path = "C:/Users/"+$test+"/Google Drive/Stort spelprojekt/MayaObjects/entry.mb";
+    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Objective" -options "v=0;p=17;f=0"  -pr $path;
+    
+}
+
+global proc ImportWallTile()  
+{
+    string $test = updateHappened();
+    string $path = "C:/Users/"+$test+"/Google Drive/Stort spelprojekt/MayaObjects/wall.mb";
+    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Objective" -options "v=0;p=17;f=0"  -pr $path;
+    
+}
+
+global proc rotateR()  
+{
+       rotate -r -os -fo 0 -90 ;
+}
+
+global proc rotateL()  
+{
+    rotate -r -os -fo 0 90 ;
     
 }
 
