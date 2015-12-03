@@ -1,0 +1,44 @@
+string $window = `window -title "ImportObj"`;
+snapMode -grid true;
+	
+	
+	columnLayout mainColumn;
+			// create  buttons
+			button -w 240 -h 50 -label"FloorTile"  -command "ImportFloorTile";
+			button -w 240 -h 50 -label "GoalTile" -command "ImportGoalTile";
+			text -label "Username: ";
+					$textfield1 = `textFieldGrp -changeCommand "updateHappened()"
+                    -text "tempUserName"`;            				
+	       	
+	       	
+	// show the window    	       	
+	showWindow $window;;
+  
+
+global proc ImportFloorTile()  
+{
+    
+    string $test = updateHappened();
+    string $path = "C:/Users/"+$test+"/Google Drive/Stort spelprojekt/MayaObjects/floor.mb";
+    print($test);
+    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Objective" -options "v=0;p=17;f=0"  -pr $path;
+    
+}
+
+global proc ImportGoalTile()  
+{
+    string $test = updateHappened();
+    string $path = "C:/Users/"+$test+"/Google Drive/Stort spelprojekt/MayaObjects/Objective.mb";
+    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Objective" -options "v=0;p=17;f=0"  -pr $path;
+    
+}
+
+global proc string updateHappened()
+{
+global string $textfield1;
+  
+string $v = `textFieldGrp -q -text $textfield1`;
+print("You Changed Textfield to: \"" + $v + "\"\n");
+
+return $v;
+}
