@@ -37,7 +37,7 @@ global proc ImportFloorTile()
     string $test = updateHappened();
     string $path = "C:/Users/"+$test+"/Google Drive/Stort spelprojekt/MayaObjects/floor.mb";
     print($test);
-    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Objective" -options "v=0;p=17;f=0"  -pr $path;
+    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Floor" -options "v=0;p=17;f=0"  -pr $path;
     
 }
 
@@ -53,7 +53,7 @@ global proc ImportEntryTile()
 {
     string $test = updateHappened();
     string $path = "C:/Users/"+$test+"/Google Drive/Stort spelprojekt/MayaObjects/entry.mb";
-    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Objective" -options "v=0;p=17;f=0"  -pr $path;
+    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Entry" -options "v=0;p=17;f=0"  -pr $path;
     
 }
 
@@ -61,7 +61,7 @@ global proc ImportWallTile()
 {
     string $test = updateHappened();
     string $path = "C:/Users/"+$test+"/Google Drive/Stort spelprojekt/MayaObjects/wall.mb";
-    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Objective" -options "v=0;p=17;f=0"  -pr $path;
+    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Wall" -options "v=0;p=17;f=0"  -pr $path;
     
 }
 
