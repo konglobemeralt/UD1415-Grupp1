@@ -1,6 +1,5 @@
 {
 string $window = `window -title "LevelCreatorUtility"`;
-string $textfield1;
 snapMode -grid true;
 	
 	
@@ -80,7 +79,7 @@ global proc rotateL()
 
 global proc string updateHappened()
 {
-string $textfield1;
+global string $textfield1;
   
 string $v = `textFieldGrp -q -text $textfield1`;
 print("You Changed Textfield to: \"" + $v + "\"\n");
