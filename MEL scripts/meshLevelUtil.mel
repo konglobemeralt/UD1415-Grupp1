@@ -11,7 +11,7 @@ snapMode -grid true;
 					$textfield1 = `textFieldGrp -changeCommand "updateHappened()"
                     -text "tempUserName"`;   
                     text -label "";  
-			
+			updateHappened();
 			button -w 240 -h 50 -label"Floor Tile"  -command "ImportFloorTile";
 			button -w 240 -h 50 -label"Goal Tile" -command "ImportGoalTile";
 			button -w 240 -h 50 -label"Entry Tile"  -command "ImportEntryTile";
