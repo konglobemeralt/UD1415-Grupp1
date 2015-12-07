@@ -223,19 +223,19 @@ void exportLevelData()
 			{
 				MGlobal::displayInfo("tile says " + tileType);
 				mDataString.back().tileType = tileType.asChar();
-				mData.back().tileType = 3;
+				mData.back().tileType = 5;
 			}
 			else if (!strcmp(tileType.asChar(), "objectiveTile"))
 			{
 				MGlobal::displayInfo("tile says " + tileType);
 				mDataString.back().tileType = tileType.asChar();
-				mData.back().tileType = 4;
+				mData.back().tileType = 3;
 			}
 			else if (!strcmp(tileType.asChar(), "unit"))
 			{
 				MGlobal::displayInfo("tile says " + tileType);
 				mDataString.back().tileType = tileType.asChar();
-				mData.back().tileType = 5;
+				mData.back().tileType = 0;
 			}
 		}
 		
@@ -285,7 +285,7 @@ void exportLevelData()
 void exportToFile(levelHeader lvlHead, vector<mapData> mData)
 {
 	string outputPath;
-	string levelName = "level1.lvl";
+	string levelName = "level4.lvl";
 
 	char userPath[MAX_PATH];
 	SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);
@@ -310,7 +310,7 @@ void exportToFile(levelHeader lvlHead, vector<mapData> mData)
 void exportStrToFile()
 {
 	string outputPath;
-	string levelName = "level1.lvltxt";
+	string levelName = "level4.lvltxt";
 
 	char userPath[MAX_PATH];
 	SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);
