@@ -1,14 +1,45 @@
 #include <windows.h>
 
 #include "D3D.h"
+#include "TimerClass.h"
+#include <sstream>
 
+#pragma comment (lib, "winmm.lib")
+
+TimerClass timer;
 HWND InitWindow(HINSTANCE hInstance);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+
+void calculateAverageFrames(HWND wndHandle)
+{
+	static int frameCount = 0;
+	static float timeElapsed = 0.0f;
+
+	frameCount++;
+
+	if ((timer.time() - timeElapsed) > 1.0f)
+	{
+		float fps = (float)frameCount;
+		float mspf = 1000.0f / fps;
+
+		std::wostringstream outs;
+		outs.precision(6);
+		outs << L"Skeletal Animation" << L"    " << L"FPS:  " << fps << L"    " << L"Frame Time: " << mspf
+			<< L"  (ms)";
+		SetWindowText(wndHandle, outs.str().c_str());
+
+		frameCount = 0;
+		timeElapsed += 1.0f;
+	}
+
+}
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
 	MSG msg = { 0 };
 	HWND wndHandle = InitWindow(hInstance); //1. Skapa fönster
+	float startTime = timeGetTime();
+	float time = 0.0f;
 
 	if (wndHandle)
 	{
@@ -25,8 +56,23 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 			}
 			else
 			{
-				d3d.Update();
-				d3d.Render();
+				float deltaTime = timeGetTime();
+				if (deltaTime - startTime >= 16)
+				{
+					if (time <= 7.0f) {
+						d3d.UpdateBones(time, 0);
+						time += 0.05f;
+					}
+					else
+						time = 0.0f;
+
+					d3d.Update();
+					d3d.Render();
+
+					timer.Tick();
+					calculateAverageFrames(wndHandle);
+					startTime = deltaTime;
+				}
 			}
 		}
 		DestroyWindow(wndHandle);
@@ -60,6 +106,8 @@ HWND InitWindow(HINSTANCE hInstance)
 		nullptr,
 		hInstance,
 		nullptr);
+
+	timer.Reset();
 
 	return handle;
 }

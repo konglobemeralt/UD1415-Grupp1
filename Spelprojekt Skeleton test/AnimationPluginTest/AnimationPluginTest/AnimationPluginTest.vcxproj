@@ -75,7 +75,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.mll</TargetExt>
-    <OutDir>..\..\..\..\..\..\Program Files\Autodesk\Maya2016\bin\plug-ins\</OutDir>
+    <OutDir>C:\Program Files\Autodesk\Maya2016\bin\plug-ins\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -83,7 +83,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.mll</TargetExt>
-    <OutDir>..\..\..\..\..\..\Program Files\Autodesk\Maya2016\bin\plug-ins\</OutDir>
+    <OutDir>C:\Program Files\Autodesk\Maya2016\bin\plug-ins\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -156,8 +156,10 @@
     <ClCompile Include="SharedMemory.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Enumerations.h" />
     <ClInclude Include="MayaHeaders.h" />
     <ClInclude Include="SharedMemory.h" />
+    <ClInclude Include="Skeleton.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

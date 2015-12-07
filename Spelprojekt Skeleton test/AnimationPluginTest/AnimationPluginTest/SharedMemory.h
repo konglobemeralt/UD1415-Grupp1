@@ -25,7 +25,8 @@ public:
 	SharedMemory();
 	~SharedMemory();
 
-	void OpenMemory(float size);
+	char* OpenMemory(float size);
+	char* CloseMemory();
 
 	// SHARED MEOMRY
 	HANDLE fmCB;

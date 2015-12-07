@@ -27,11 +27,15 @@
 #include <maya/MSelectionList.h>
 #include <maya/MItDependencyNodes.h>
 #include <maya/MFn.h>
+#include <maya/MFnSet.h>
+#include <maya/MFloatMatrix.h>
 
 // Animation
 #include<maya/MFnIkJoint.h>
 #include<maya/MFnSkinCluster.h>
 #include<maya/MItGeometry.h>
+#include<maya/MFnWeightGeometryFilter.h>
+#include<maya/MAnimControl.h>
 
 //#include <maya/MIOStream.h>
 #include <maya/MPxNode.h> 

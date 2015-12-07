@@ -152,7 +152,7 @@
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Meshes.cpp" />
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="SharedMemory.cpp" />
+    <ClCompile Include="TimerClass.cpp" />
     <ClCompile Include="WICTextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -164,7 +164,7 @@
     <ClInclude Include="Meshes.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PlatformHelpers.h" />
-    <ClInclude Include="SharedMemory.h" />
+    <ClInclude Include="TimerClass.h" />
     <ClInclude Include="WICTextureLoader.h" />
   </ItemGroup>
   <ItemGroup>
