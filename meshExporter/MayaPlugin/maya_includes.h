@@ -5,6 +5,7 @@
 #define REQUIRE_IOSTREAM
 #define EXPORT __declspec(dllexport)
 
+#include <maya/MFnSkinCluster.h>
 #include <maya/MPxCommand.h>
 #include <maya/MFnPlugin.h>
 #include <maya/MFnMesh.h>
@@ -17,6 +18,7 @@
 #include <maya/MEulerRotation.h>
 #include <maya/MVector.h>
 #include <maya/MItDag.h>
+#include <maya/MItGeometry.h>
 #include <maya/MFnCamera.h>
 #include <maya/M3dView.h>
 #include <maya/MItMeshPolygon.h>
@@ -47,16 +49,15 @@
 #include <maya/MPolyMessage.h>
 #include <maya/MNodeMessage.h>
 #include <maya/MDagPath.h>
+#include <maya/MDagPathArray.h>
 #include <maya/MDagMessage.h>
 #include <maya/MUiMessage.h>
 #include <maya/MModelMessage.h>
 #include <maya/MCameraSetMessage.h>
 
-// Commands
-#include <maya/MPxCommand.h>
-
 // Libraries to link from Maya
 // This can be also done in the properties setting for the project.
 #pragma comment(lib,"Foundation.lib")
 #pragma comment(lib,"OpenMaya.lib")
+#pragma comment(lib,"OpenMayaAnim")
 #pragma comment(lib,"OpenMayaUI.lib")

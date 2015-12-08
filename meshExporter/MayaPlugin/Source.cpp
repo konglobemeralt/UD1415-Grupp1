@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <shlobj.h>
 
-
 using namespace DirectX;
 using namespace std;
 
@@ -27,6 +26,7 @@ void ExportFile(Mesh &mesh, std::string path);
 
 //fileNameExtract
 string getFileName(const string& string);
+MString skeleton;
 
 class exportAll : public MPxCommand
 {
@@ -71,6 +71,27 @@ public:
 
 };
 
+class updateSkeleton : public MPxCommand
+{
+public:
+	updateSkeleton() {};
+	~updateSkeleton() {};
+
+	virtual MStatus doIt(const MArgList&)
+	{
+		setResult("exportSelected Called\n");
+		MGlobal::executeCommand("textFieldGrp -q -text $skeleton;", skeleton);
+		MGlobal::displayInfo(skeleton);
+		return MS::kSuccess;
+	}
+
+	static void* creator()
+	{
+		return new updateSkeleton;
+	}
+
+};
+
 
 // called when the plugin is loaded
 EXPORT MStatus initializePlugin(MObject obj)
@@ -88,6 +109,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 	// register our commands with maya
 	status = plugin.registerCommand("exportAll", exportAll::creator);
 	status = plugin.registerCommand("exportSelected", exportSelected::creator);
+	status = plugin.registerCommand("updateSkeleton", updateSkeleton::creator);
 
 	initUI();
 
@@ -112,6 +134,7 @@ EXPORT MStatus uninitializePlugin(MObject obj)
 	// deregister our commands with maya
 	status = plugin.deregisterCommand("exportAll");
 	status = plugin.deregisterCommand("exportSelected");
+	status = plugin.deregisterCommand("updateSkeleton");
 
 	deleteUI();
 	
@@ -124,13 +147,16 @@ EXPORT MStatus uninitializePlugin(MObject obj)
 void initUI()
 {
 	MGlobal::executeCommand("window -wh 250 105 -s true -title ""MeshExporter"" ""meshExporterUI"";");
-	MGlobal::executeCommand("columnLayout -columnAttach ""left"" 5 -rowSpacing 5 -columnWidth 100;;");
+	MGlobal::executeCommand("columnLayout -columnAttach ""left"" 5 -rowSpacing 5 -columnWidth 100;");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Everything"" -command ""exportAll"";");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Selected"" -command ""exportSelected"";");
-	
-	
+	MGlobal::executeCommand("text -label ""Skeleton"";");
+	MGlobal::executeCommand("$skeleton = `textFieldGrp -changeCommand ""updateSkeleton"" -text ""Unrigged"" `;");
+	MGlobal::executeCommand("textFieldGrp -q -text $skeleton;", skeleton);
 	MGlobal::executeCommand("showWindow;");
 	
+	MGlobal::displayInfo(skeleton);
+
 	MGlobal::displayInfo("UI created");
 }
 
@@ -170,7 +196,7 @@ void ExportFinder(bool sl)//sl(selected) sätts genom knapparnas call till Export
 				break;
 
 			if (!dag_node.isIntermediateObject())
-				for (int i = 0; i < scene.length(); i++)
+				for (uint i = 0; i < scene.length(); i++)
 					if (strcmp(transform.name().asChar(), scene[i].asChar()) == 0)
 					{
 						ExportMesh(transform);
@@ -192,14 +218,14 @@ void ExtractLights(MFnMesh &meshDag, Geometry &geometry)
 
 			for (size_t i = 0; i < point.parentCount(); i++)
 			{
-				MObject parent = point.parent(i);
+				MObject parent = point.parent((uint)i);
 				if (parent.hasFn(MFn::kTransform))
 				{
 					MFnTransform transform(parent);
 					MVector translation = transform.translation(MSpace::kObject);
-					geometry.pointLights.back().pos[0] = translation.x;
-					geometry.pointLights.back().pos[1] = translation.y;
-					geometry.pointLights.back().pos[2] = translation.z;
+					geometry.pointLights.back().pos[0] = (float)translation.x;
+					geometry.pointLights.back().pos[1] = (float)translation.y;
+					geometry.pointLights.back().pos[2] = (float)translation.z;
 					break;
 				}
 			}
@@ -220,14 +246,14 @@ void ExtractLights(MFnMesh &meshDag, Geometry &geometry)
 
 			for (size_t i = 0; i < spot.parentCount(); i++)
 			{
-				MObject parent = spot.parent(i);
+				MObject parent = spot.parent((uint)i);
 				if (parent.hasFn(MFn::kTransform))
 				{
 					MFnTransform transform(parent);
 					MVector translation = transform.translation(MSpace::kObject);
-					geometry.spotLights.back().pos[0] = translation.x;
-					geometry.spotLights.back().pos[1] = translation.y;
-					geometry.spotLights.back().pos[2] = translation.z;
+					geometry.spotLights.back().pos[0] = (float)translation.x;
+					geometry.spotLights.back().pos[1] = (float)translation.y;
+					geometry.spotLights.back().pos[2] = (float)translation.z;
 					break;
 				}
 			}
@@ -238,25 +264,17 @@ void ExtractLights(MFnMesh &meshDag, Geometry &geometry)
 
 			geometry.spotLights.back().intensity = spot.intensity();
 
-			geometry.spotLights.back().angle = spot.coneAngle();
+			geometry.spotLights.back().angle = (float)spot.coneAngle();
 
 			geometry.spotLights.back().direction[0] = spot.lightDirection().x;
 			geometry.spotLights.back().direction[1] = spot.lightDirection().y;
 			geometry.spotLights.back().direction[2] = spot.lightDirection().z;
-
-			
-	
-
 		}
-
-
-
-
 		iter.next();
 	}
 }
 
-vector<VertexOut> UnpackVertices(vector<Point> *points, vector<Normal> *normals, vector<TexCoord> *UVs, vector<Face> *vertexIndices, int skeleton)
+vector<VertexOut> UnpackVertices(vector<Point>* points, vector<Normal>* normals, vector<TexCoord>* UVs, vector<Face>* vertexIndices)
 {
 	vector<VertexOut> vertices;
 
@@ -275,6 +293,81 @@ vector<VertexOut> UnpackVertices(vector<Point> *points, vector<Normal> *normals,
 		}
 	}
 	return vertices;
+}
+
+void OutputSkinCluster(MObject &obj, Geometry &mesh, MString name)
+{
+	// attach a skin cluster function set to
+	// access the data
+	skinData SD;
+	MFnSkinCluster fn(obj);
+	MDagPathArray infs;
+
+	//Get influences
+	SD.influences = fn.influenceObjects(infs);
+
+	// loop through the geometries affected by this cluster
+	int nGeoms = fn.numOutputConnections();
+	for (int i = 0; i < nGeoms; ++i) {
+		unsigned int index;
+		index = fn.indexForOutputConnection(i);
+
+		// get the dag path of the i'th geometry
+		MDagPath skinPath;
+		fn.getPathAtIndex(index, skinPath);
+
+		MGlobal::displayInfo(skinPath.partialPathName());
+		MGlobal::displayInfo(name);
+		if (strcmp(skinPath.partialPathName().asChar(), name.asChar()))
+			return;
+
+		// iterate through the components of this geometry
+		MItGeometry gIter(skinPath);
+
+		//Get points affected
+		SD.points = gIter.count();
+
+		for (; !gIter.isDone(); gIter.next()) {
+
+			MObject comp = gIter.component();
+			// Get the weights for this vertex (one per influence object)
+			//
+			MFloatArray wts;
+			unsigned int infCount;
+			fn.getWeights(skinPath, comp, wts, infCount);
+			if (0 != infCount && !gIter.isDone())
+			{
+				int numWeights = 0;
+				float outWts[40] = { 1.0f, 0 };
+				int outInfs[40] = { 0 };
+
+				// Output the weight data for this vertex
+				//
+				for (int j = 0; j != infCount; ++j)
+				{
+					// ignore weights of little effect
+					if (wts[j] > 0.001f)
+					{
+						if (numWeights != 0)
+						{
+							outWts[0] -= wts[j];
+							outWts[numWeights] = wts[j];
+						}
+						outInfs[numWeights] = j;
+						++numWeights;
+					}
+				}
+				float norm = outWts[0] + outWts[1] + outWts[2] + outWts[3];
+
+
+				for (int x = 0; x < 4; x++)
+				{
+					mesh.points[gIter.index()].boneIndices[x] = outInfs[x];
+					mesh.points[gIter.index()].boneWeigths[x] = outWts[x] / norm;
+				}
+			}
+		}
+	}
 }
 
 Geometry ExtractGeometry(MFnMesh &mesh)
@@ -330,21 +423,23 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 
 	//MGlobal::executeCommand(MString("deleteHistory;"));
 	MGlobal::executeCommand("select " + mesh.name());
-	MGlobal::executeCommand("polyTriangulate;", false, true);//TODO - Bör dra från origmesh eller göra en undo
+	MGlobal::executeCommand("polyTriangulate;", false, true);
 
 	mesh.getPoints(points, world_space);
-	for (int i = 0; i < points.length(); i++)
+	for (uint i = 0; i < points.length(); i++)
 	{
 		Point temppoints = { points[i].x, points[i].y, -points[i].z };
 		geometry.points.push_back(temppoints);
 	}
 
 	mesh.getNormals(normals, world_space);
-	for (int i = 0; i < normals.length(); i++)
+	for (uint i = 0; i < normals.length(); i++)
 	{
 		Normal tempnormals = { normals[i].x, normals[i].y, -normals[i].z };
 		geometry.normals.push_back(tempnormals);
 	}
+
+
 
 	MStringArray uvSets;
 	mesh.getUVSetNames(uvSets);
@@ -355,7 +450,7 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 
 	MString currentSet = uvSets[0];
 	mesh.getUVs(Us, Vs, &currentSet);
-	for (int a = 0; a < Us.length(); a++)
+	for (uint a = 0; a < Us.length(); a++)
 	{
 		UVs.u = Us[a];
 		UVs.v = 1 - Vs[a];
@@ -382,7 +477,10 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 	
 	MGlobal::executeCommand("undo;", false, true);
 
-	geometry.vertices = UnpackVertices(&geometry.points, &geometry.normals, &geometry.texCoords, &geometry.faces, -1);
+	for (MItDependencyNodes it(MFn::kSkinClusterFilter); !it.isDone(); it.next())
+		OutputSkinCluster(it.item(), geometry, mesh.partialPathName());
+
+	geometry.vertices = UnpackVertices(&geometry.points, &geometry.normals, &geometry.texCoords, &geometry.faces);
 
 	return geometry;
 }
@@ -508,7 +606,7 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 	primaryMesh.Name = primaryMeshDag.name().asChar();
 	primaryMesh.geometry = ExtractGeometry(meshFN);
 	primaryMesh.material = ExtractMaterial(meshFN);
-	//skeletonID?
+	primaryMesh.skeletonID = skeleton.asChar();
 
 	MItDag subMeshes(MItDag::kBreadthFirst, MFn::kMesh);
 	subMeshes.reset(primaryMeshDag.object(), MItDag::kBreadthFirst, MFn::kMesh);
@@ -542,77 +640,92 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 	SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);
 	ExportFile(primaryMesh, (string)userPath + "/Google Drive/Stort spelprojekt/ExportedModels/" + primaryMesh.Name + ".bin");//Kanske ha en dialog i fönstret?
 	return false;
-
-
 }
 
 void ExportFile(Mesh &mesh, std::string path)
 {
-
 	//kolla its för dokumentation
 	std::ofstream outfile;
 	outfile.open(path.c_str(), std::ofstream::binary);
 	MainHeader mainHeader;
-	mainHeader.version = 23;
-	mainHeader.meshCount = mesh.subMeshes.size();
+	mainHeader.version = 24;
+	mainHeader.meshCount = (int)mesh.subMeshes.size();
 	outfile.write((const char*)&mainHeader, sizeof(MainHeader));
 
+	int skeletonStringLength = mesh.skeletonID.size();
+	outfile.write((const char*)&skeletonStringLength, 4);
+	outfile.write(mesh.Name.data(), skeletonStringLength);
+
 	MeshHeader meshHeader;
-	meshHeader.nameLength = mesh.Name.length() + 1;
-	meshHeader.numberOfVertices = mesh.geometry.vertices.size();
+	meshHeader.nameLength = (int)mesh.Name.length() + 1;
+	meshHeader.numberOfVertices = (int)mesh.geometry.vertices.size();
 	meshHeader.subMeshID = 0;
-	meshHeader.numberPointLights = mesh.geometry.pointLights.size();
-	meshHeader.numberSpotLights = mesh.geometry.spotLights.size();
+	meshHeader.numberPointLights = (int)mesh.geometry.pointLights.size();
+	meshHeader.numberSpotLights = (int)mesh.geometry.spotLights.size();
 	int toMesh = sizeof(MainHeader) + sizeof(MeshHeader) + meshHeader.nameLength + (mainHeader.meshCount + 1) * 4;
 	outfile.write((char*)&toMesh, 4);
-	toMesh += meshHeader.numberOfVertices*sizeof(VertexOut) + meshHeader.numberPointLights * sizeof(PointLight) + meshHeader.numberSpotLights * sizeof(SpotLight);
+	if (strcmp(mesh.skeletonID.data(), "Unrigged"))
+		toMesh += meshHeader.numberOfVertices*sizeof(WeightedVertexOut);
+	else
+		toMesh += meshHeader.numberOfVertices*sizeof(VertexOut);
+	toMesh += meshHeader.numberPointLights * sizeof(PointLight) + meshHeader.numberSpotLights * sizeof(SpotLight);
 
 	for (int i = 0; i < mainHeader.meshCount; i++)
 	{
-		meshHeader.nameLength = mesh.Name.length() + 1;
-		meshHeader.numberOfVertices = mesh.subMeshes[i].geometry.vertices.size();
+		meshHeader.nameLength = (int)mesh.Name.length() + 1;
+		meshHeader.numberOfVertices = (int)mesh.subMeshes[i].geometry.vertices.size();
 		meshHeader.subMeshID = i + 1;
-		meshHeader.numberPointLights = mesh.subMeshes[i].geometry.pointLights.size();
-		meshHeader.numberSpotLights = mesh.subMeshes[i].geometry.spotLights.size();
+		meshHeader.numberPointLights = (int)mesh.subMeshes[i].geometry.pointLights.size();
+		meshHeader.numberSpotLights = (int)mesh.subMeshes[i].geometry.spotLights.size();
 		toMesh += sizeof(MeshHeader) + meshHeader.nameLength;
 		outfile.write((char*)&toMesh, 4);
-		toMesh += meshHeader.numberOfVertices*sizeof(VertexOut) + meshHeader.numberPointLights * sizeof(PointLight) + meshHeader.numberSpotLights * sizeof(SpotLight);
+		if (strcmp(mesh.skeletonID.data(), "Unrigged"))
+			toMesh += meshHeader.numberOfVertices*sizeof(WeightedVertexOut);
+		else
+			toMesh += meshHeader.numberOfVertices*sizeof(VertexOut);
+		toMesh += meshHeader.numberPointLights * sizeof(PointLight) + meshHeader.numberSpotLights * sizeof(SpotLight);
 	}
 
 	//finding sizes of main mesh contents in header
-	meshHeader.nameLength = mesh.Name.length()+1;
-	meshHeader.numberOfVertices = mesh.geometry.vertices.size();
+	meshHeader.nameLength = (int)mesh.Name.length()+1;
+	meshHeader.numberOfVertices = (int)mesh.geometry.vertices.size();
 	meshHeader.subMeshID = 0;
-	meshHeader.numberPointLights = mesh.geometry.pointLights.size();
-	meshHeader.numberSpotLights = mesh.geometry.spotLights.size();
+	meshHeader.numberPointLights = (int)mesh.geometry.pointLights.size();
+	meshHeader.numberSpotLights = (int)mesh.geometry.spotLights.size();
 	outfile.write((const char*)&meshHeader, sizeof(MeshHeader)); //writing the sizes found in the main mesh header
 
 	//writing the main mesh contents to file according to the sizes of main mesh header
 	outfile.write((const char*)mesh.Name.data(), meshHeader.nameLength);
-	outfile.write((const char*)mesh.geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(VertexOut));
+	if (strcmp(mesh.skeletonID.data(), "Unrigged"))
+		outfile.write((const char*)mesh.geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(WeightedVertexOut));
+	else
+		outfile.write((const char*)mesh.geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(VertexOut));
 	outfile.write((const char*)mesh.geometry.pointLights.data(), meshHeader.numberPointLights * sizeof(PointLight));
 	outfile.write((const char*)mesh.geometry.spotLights.data(), meshHeader.numberSpotLights * sizeof(SpotLight));
 
 	for (int i = 0; i < mainHeader.meshCount; i++) {
 
 		//finding sizes of submesh contents in header
-		meshHeader.nameLength = mesh.Name.length()+1;
-		meshHeader.numberOfVertices = mesh.subMeshes[i].geometry.vertices.size();
+		meshHeader.nameLength = (int)mesh.Name.length()+1;
+		meshHeader.numberOfVertices = (int)mesh.subMeshes[i].geometry.vertices.size();
 		meshHeader.subMeshID = i + 1;
-		meshHeader.numberPointLights = mesh.subMeshes[i].geometry.pointLights.size();
-		meshHeader.numberSpotLights = mesh.subMeshes[i].geometry.spotLights.size();
+		meshHeader.numberPointLights = (int)mesh.subMeshes[i].geometry.pointLights.size();
+		meshHeader.numberSpotLights = (int)mesh.subMeshes[i].geometry.spotLights.size();
 		outfile.write((const char*)&meshHeader, sizeof(MeshHeader));//writing the sizes found in the submesh header
 	
 		//writing the submesh contents to file according to the sizes of main mesh header
 		outfile.write((const char*)mesh.subMeshes[i].Name.data(), meshHeader.nameLength);
-		outfile.write((const char*)mesh.subMeshes[i].geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(VertexOut));
+		if (strcmp(mesh.skeletonID.data(), "Unrigged"))
+			outfile.write((const char*)mesh.subMeshes[i].geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(WeightedVertexOut));
+		else
+			outfile.write((const char*)mesh.subMeshes[i].geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(VertexOut));
 		outfile.write((const char*)mesh.subMeshes[i].geometry.pointLights.data(), meshHeader.numberPointLights * sizeof(PointLight));
 		outfile.write((const char*)mesh.subMeshes[i].geometry.spotLights.data(), meshHeader.numberSpotLights * sizeof(SpotLight));
 	}
 
 	MatHeader matHeader;
-	matHeader.diffuseNameLength = mesh.material.diffuseTexture.length()+1;
-	matHeader.specularNameLength = mesh.material.specularTexture.length() + 1;
+	matHeader.diffuseNameLength = (int)mesh.material.diffuseTexture.length() + 1;
+	matHeader.specularNameLength = (int)mesh.material.specularTexture.length() + 1;
 
 	if (matHeader.specularNameLength == 1)
 		matHeader.specularNameLength = 0;
@@ -645,7 +758,7 @@ string getFileName(const string& string)
 //
 	//size_t i = string.rfind(slashChar, string.length());
 
-	int i = string.find_last_of(slashChar);
+	int i = (int)string.find_last_of(slashChar);
 
 	if (i != string.length())
 	{

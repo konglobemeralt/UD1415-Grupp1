@@ -13,6 +13,11 @@ struct Normal
 	float x, y, z;
 };
 
+struct skinData
+{
+	int points;
+	int influences;
+};
 
 struct TexCoord
 {
@@ -32,6 +37,12 @@ struct Face
 struct VertexOut
 {
 	float pos[3], nor[3], uv[2];
+};
+
+struct WeightedVertexOut
+{
+	short influences[4];
+	float pos[3], nor[3], uv[2], weights[4];
 };
 
 struct Material
@@ -57,6 +68,7 @@ struct Geometry
 	std::vector<TexCoord> texCoords;
 	std::vector<Face> faces;
 	std::vector<VertexOut> vertices;
+	std::vector<WeightedVertexOut> weightedVertices;
 	
 	std::vector<PointLight> pointLights;
 	std::vector<SpotLight> spotLights;
@@ -71,7 +83,7 @@ struct SubMesh
 struct Mesh
 {
 	std::string Name;
-	int skeletonID;
+	std::string skeletonID;
 	std::vector<SubMesh> subMeshes;
 	Geometry geometry;
 	Material material;
