@@ -1,52 +1,86 @@
- $selection = `ls -sl -type "transform"`;
- string $shapes[] = `listRelatives -children -shapes $selection[0]`;
- print($selection);
+{
+string $window = `window -title "LevelCreatorUtility"`;
+snapMode -grid true;
+	
+	
+	columnLayout mainColumn;
+	columnLayout -columnAttach "both" 5 -rowSpacing 5 -columnWidth 240;
+			// create  buttons
+			
+			text -label "Username: ";
+					$textfield1 = `textFieldGrp -changeCommand "updateHappened()"
+                    -text "tempUserName"`;   
+                    text -label "";  
+			updateHappened();
+			button -w 240 -h 50 -label"Floor Tile"  -command "ImportFloorTile";
+			button -w 240 -h 50 -label"Goal Tile" -command "ImportGoalTile";
+			button -w 240 -h 50 -label"Entry Tile"  -command "ImportEntryTile";
+			button -w 240 -h 50 -label"Wall Tile"  -command "ImportWallTile";
+			text -label "";  
+			 
+		    rowLayout 
+          -numberOfColumns 2 
+          -columnWidth2 120 120
+          -columnAlign2 "left" "left";
+			button -w 120 -h 50 -label"Rotate 90 L"  -command "rotateL";
+			button -w 120 -h 50 -label"Rotate 90 R"  -command "rotateR";
+				       	
+	// show the window    	       	
+	showWindow $window;;
+  
 
+global proc ImportFloorTile()  
+{
+    
+    string $test = updateHappened();
+    string $path = "C:/Users/"+$test+"/Google Drive/Stort spelprojekt/MayaObjects/floor.mb";
+    print($test);
+    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Floor" -options "v=0;p=17;f=0"  -pr $path;
+    
+}
 
-$selection = `ls -sl -type "transform"`;
-    string $mesh;
-    string $shapes[] = `listRelatives -children -shapes $selection[0]`;
-      
-    for ($mesh in $selection) 
-    {
-        print ("\n");
-        print ("\n");
-        string $shapes[] = `listRelatives -s -path $mesh`;
-        //print $shapes[0]; //pCubeShape
-        print ("\n");
-        
-        string $parents[] = `listRelatives -allParents $mesh`;
-       
-       
-       int $numVertsArray[] = `polyEvaluate -v`;
-       
-       int $numVerts = $numVertsArray[0];
-       print ($numVerts);
-       //(int)$numVertsString;
-       
-       
-       int $i = 0;          
-       while($i != $numVerts)
-       {
-       print ("\n");
-       print ($shapes[0]+".pt["+$i+"].px");
-       string $verString =  $shapes[0]+".pt["+$i+"].px";
-       setAttr -lock true $verString;
-       print ("\n");
-       
-       print ("\n");  
-       print ($shapes[0]+".pt["+$i+"].py");
-       string $verString =  $shapes[0]+".pt["+$i+"].py";
-       setAttr -lock true $verString;
-       print ("\n");
-       
-       print ("\n");
-       print ($shapes[0]+".pt["+$i+"].pz");
-       string $verString =  $shapes[0]+".pt["+$i+"].pz";
-       setAttr -lock true $verString;
-       print ("\n");
-       $i++;
-       } 
-       
-        
-    }
+global proc ImportGoalTile()  
+{
+    string $test = updateHappened();
+    string $path = "C:/Users/"+$test+"/Google Drive/Stort spelprojekt/MayaObjects/Objective.mb";
+    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Objective" -options "v=0;p=17;f=0"  -pr $path;
+    
+}
+
+global proc ImportEntryTile()  
+{
+    string $test = updateHappened();
+    string $path = "C:/Users/"+$test+"/Google Drive/Stort spelprojekt/MayaObjects/entry.mb";
+    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Entry" -options "v=0;p=17;f=0"  -pr $path;
+    
+}
+
+global proc ImportWallTile()  
+{
+    string $test = updateHappened();
+    string $path = "C:/Users/"+$test+"/Google Drive/Stort spelprojekt/MayaObjects/wall.mb";
+    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Wall" -options "v=0;p=17;f=0"  -pr $path;
+    
+}
+
+global proc rotateR()  
+{
+    rotate -r -os -fo 0 -90 ;
+}
+
+global proc rotateL()  
+{
+    rotate -r -os -fo 0 90 ;
+    
+}
+
+global proc string updateHappened()
+{
+global string $textfield1;
+  
+string $v = `textFieldGrp -q -text $textfield1`;
+print("You Changed Textfield to: \"" + $v + "\"\n");
+
+return $v;
+}
+}
