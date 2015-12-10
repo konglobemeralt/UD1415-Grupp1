@@ -654,7 +654,7 @@ void ExportFile(Mesh &mesh, std::string path)
 
 	int skeletonStringLength = mesh.skeletonID.size();
 	outfile.write((const char*)&skeletonStringLength, 4);
-	outfile.write(mesh.Name.data(), skeletonStringLength);
+	outfile.write(mesh.skeletonID.data(), skeletonStringLength);
 
 	MeshHeader meshHeader;
 	meshHeader.nameLength = (int)mesh.Name.length() + 1;
@@ -662,7 +662,7 @@ void ExportFile(Mesh &mesh, std::string path)
 	meshHeader.subMeshID = 0;
 	meshHeader.numberPointLights = (int)mesh.geometry.pointLights.size();
 	meshHeader.numberSpotLights = (int)mesh.geometry.spotLights.size();
-	int toMesh = sizeof(MainHeader) + sizeof(MeshHeader) + meshHeader.nameLength + (mainHeader.meshCount + 1) * 4;
+	int toMesh = sizeof(MainHeader)+ 4 +skeletonStringLength + sizeof(MeshHeader) + meshHeader.nameLength + (mainHeader.meshCount + 1) * 4;
 	outfile.write((char*)&toMesh, 4);
 	if (strcmp(mesh.skeletonID.data(), "Unrigged"))
 		toMesh += meshHeader.numberOfVertices*sizeof(WeightedVertexOut);
@@ -697,7 +697,7 @@ void ExportFile(Mesh &mesh, std::string path)
 	//writing the main mesh contents to file according to the sizes of main mesh header
 	outfile.write((const char*)mesh.Name.data(), meshHeader.nameLength);
 	if (strcmp(mesh.skeletonID.data(), "Unrigged"))
-		outfile.write((const char*)mesh.geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(WeightedVertexOut));
+		outfile.write((const char*)mesh.geometry.weightedVertices.data(), meshHeader.numberOfVertices * sizeof(WeightedVertexOut));
 	else
 		outfile.write((const char*)mesh.geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(VertexOut));
 	outfile.write((const char*)mesh.geometry.pointLights.data(), meshHeader.numberPointLights * sizeof(PointLight));
@@ -716,7 +716,7 @@ void ExportFile(Mesh &mesh, std::string path)
 		//writing the submesh contents to file according to the sizes of main mesh header
 		outfile.write((const char*)mesh.subMeshes[i].Name.data(), meshHeader.nameLength);
 		if (strcmp(mesh.skeletonID.data(), "Unrigged"))
-			outfile.write((const char*)mesh.subMeshes[i].geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(WeightedVertexOut));
+			outfile.write((const char*)mesh.subMeshes[i].geometry.weightedVertices.data(), meshHeader.numberOfVertices * sizeof(WeightedVertexOut));
 		else
 			outfile.write((const char*)mesh.subMeshes[i].geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(VertexOut));
 		outfile.write((const char*)mesh.subMeshes[i].geometry.pointLights.data(), meshHeader.numberPointLights * sizeof(PointLight));
