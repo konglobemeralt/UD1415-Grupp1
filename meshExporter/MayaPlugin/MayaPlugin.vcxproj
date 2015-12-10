@@ -119,6 +119,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="maya_includes.h" />
+    <ClInclude Include="Skeleton.h" />
     <ClInclude Include="Structs.h" />
   </ItemGroup>
   <ItemGroup>

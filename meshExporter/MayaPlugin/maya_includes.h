@@ -41,6 +41,13 @@
 #include <maya/MGlobal.h>
 #include <maya/MCallbackIdArray.h>
 
+// Animation
+#include<maya/MFnIkJoint.h>
+#include<maya/MFnSkinCluster.h>
+#include<maya/MItGeometry.h>
+#include<maya/MFnWeightGeometryFilter.h>
+#include<maya/MAnimControl.h>
+
 // Messages
 #include <maya/MMessage.h>
 #include <maya/MTimerMessage.h>

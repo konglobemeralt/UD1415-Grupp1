@@ -130,10 +130,10 @@ void D3D::Create()
 	CreateTexture();
 
 	string name = "basemanBody";
-	string fileDir = "C:/Users/Spelprojekt/Desktop/Spelprojekt Skeleton test/Files/";
+	string fileDir = "C:/Users/Spelprojekt/Google Drive/Stort spelprojekt";
 	// Mesh
 	ifstream infile;
-	infile.open(fileDir + name + "_Mesh.bin", std::ofstream::binary);
+	infile.open("C:/Users/Spelprojekt/Desktop/Spelprojekt Skeleton test/Files/" + name + "_Mesh.bin", std::ofstream::binary);
 	if (infile) {
 		unsigned int meshSize = 0;
 		infile.read((char*)&meshSize, sizeof(int));
