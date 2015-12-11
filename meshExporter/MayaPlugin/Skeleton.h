@@ -15,10 +15,9 @@ public:
 	struct AnimationHeader
 	{
 		unsigned int version;
-		unsigned int skeletonID;
 		unsigned int framerate;
 		unsigned int nrOfLayers;
-		unsigned nrOfBones;
+		unsigned int nrOfBones;
 	};
 
 	struct BindPoseData

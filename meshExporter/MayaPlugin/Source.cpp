@@ -451,7 +451,6 @@ void ExportAnimation()
 	{
 		MGlobal::executeCommand("undo", false, true);
 		anim.animHeader.version = 1;
-		anim.animHeader.skeletonID = 0;
 		anim.animHeader.nrOfBones = index;
 
 		// Convert bind pose from local to world
@@ -473,7 +472,6 @@ void ExportAnimation()
 
 		// Fill animation layer header
 		anim.animHeader.version = 1;
-		anim.animHeader.skeletonID = 0;
 		anim.animHeader.framerate = 60;
 		anim.animHeader.nrOfLayers = 0;
 
@@ -892,16 +890,19 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 	//Exporterar en mesh och alla dess submeshes. Testar alla subs att deras parent är primaryMesh
 	MGlobal::displayInfo(MString("Extracting Primary Mesh " + primaryMeshDag.name()));
 
-	MStatus stat;
-	MFnMesh meshFN(primaryMeshDag.child(0));
-	MFnMesh test(primaryMeshDag.child(1), &stat);
-	MGlobal::displayInfo(MString("TITTA HÄR: ") + primaryMeshDag.childCount());
-	//MGlobal::displayInfo("TITTA HÄR: " + test.name());
+	MFnMesh* meshFN;
+	if(primaryMeshDag.childCount() > 1)
+		meshFN = new MFnMesh(primaryMeshDag.child(1));
+	else
+		meshFN = new MFnMesh(primaryMeshDag.child(0));
+
+	//MGlobal::displayInfo(MString("TITTA HÄR: ") + primaryMeshDag.childCount());
+	MGlobal::displayInfo("TITTA HÄR: " + meshFN->name());
 
 	Mesh primaryMesh;
 	primaryMesh.Name = primaryMeshDag.name().asChar();
-	primaryMesh.geometry = ExtractGeometry(meshFN);
-	primaryMesh.material = ExtractMaterial(meshFN);
+	primaryMesh.geometry = ExtractGeometry(*meshFN);
+	primaryMesh.material = ExtractMaterial(*meshFN);
 	primaryMesh.skeletonID = skeleton.asChar();
 
 	MItDag subMeshes(MItDag::kBreadthFirst, MFn::kMesh);
@@ -954,7 +955,10 @@ void ExportFile(Mesh &mesh, std::string path)
 
 	MeshHeader meshHeader;
 	meshHeader.nameLength = (int)mesh.Name.length() + 1;
-	meshHeader.numberOfVertices = (int)mesh.geometry.vertices.size();
+	if (strcmp(mesh.skeletonID.data(), "Unrigged"))
+		meshHeader.numberOfVertices = (int)mesh.geometry.weightedVertices.size();
+	else
+		meshHeader.numberOfVertices = (int)mesh.geometry.vertices.size();
 	meshHeader.subMeshID = 0;
 	meshHeader.numberPointLights = (int)mesh.geometry.pointLights.size();
 	meshHeader.numberSpotLights = (int)mesh.geometry.spotLights.size();
@@ -969,7 +973,10 @@ void ExportFile(Mesh &mesh, std::string path)
 	for (int i = 0; i < mainHeader.meshCount; i++)
 	{
 		meshHeader.nameLength = (int)mesh.Name.length() + 1;
-		meshHeader.numberOfVertices = (int)mesh.subMeshes[i].geometry.vertices.size();
+		if (strcmp(mesh.skeletonID.data(), "Unrigged"))
+			meshHeader.numberOfVertices = (int)mesh.subMeshes[i].geometry.weightedVertices.size();
+		else
+			meshHeader.numberOfVertices = (int)mesh.subMeshes[i].geometry.vertices.size();
 		meshHeader.subMeshID = i + 1;
 		meshHeader.numberPointLights = (int)mesh.subMeshes[i].geometry.pointLights.size();
 		meshHeader.numberSpotLights = (int)mesh.subMeshes[i].geometry.spotLights.size();
@@ -984,7 +991,10 @@ void ExportFile(Mesh &mesh, std::string path)
 
 	//finding sizes of main mesh contents in header
 	meshHeader.nameLength = (int)mesh.Name.length()+1;
-	meshHeader.numberOfVertices = (int)mesh.geometry.vertices.size();
+	if (strcmp(mesh.skeletonID.data(), "Unrigged"))
+		meshHeader.numberOfVertices = (int)mesh.geometry.weightedVertices.size();
+	else
+		meshHeader.numberOfVertices = (int)mesh.geometry.vertices.size();
 	meshHeader.subMeshID = 0;
 	meshHeader.numberPointLights = (int)mesh.geometry.pointLights.size();
 	meshHeader.numberSpotLights = (int)mesh.geometry.spotLights.size();
@@ -1003,7 +1013,10 @@ void ExportFile(Mesh &mesh, std::string path)
 
 		//finding sizes of submesh contents in header
 		meshHeader.nameLength = (int)mesh.Name.length()+1;
-		meshHeader.numberOfVertices = (int)mesh.subMeshes[i].geometry.vertices.size();
+		if (strcmp(mesh.skeletonID.data(), "Unrigged"))
+			meshHeader.numberOfVertices = (int)mesh.subMeshes[i].geometry.weightedVertices.size();
+		else
+			meshHeader.numberOfVertices = (int)mesh.subMeshes[i].geometry.vertices.size();
 		meshHeader.subMeshID = i + 1;
 		meshHeader.numberPointLights = (int)mesh.subMeshes[i].geometry.pointLights.size();
 		meshHeader.numberSpotLights = (int)mesh.subMeshes[i].geometry.spotLights.size();
