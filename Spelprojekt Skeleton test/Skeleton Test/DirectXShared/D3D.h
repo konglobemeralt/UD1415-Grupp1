@@ -75,49 +75,42 @@ private:
 	XMFLOAT4X4 worldMatrix;
 	ID3D11Buffer* worldBuffer;
 
-	// Skeleton
-	struct SkeletonHeader
-	{
-		unsigned int version;
-		unsigned int skeletonID;
-		unsigned nrOfBones;
-	}skelHead;
-
-	struct Transform
-	{
-		XMFLOAT3 translation;
-		XMFLOAT4 rotation;
-		XMFLOAT3 scale;
-	};
-
-	struct BoneData
-	{
-		vector<int> parent;
-		vector<XMFLOAT4X4> bindPose;
-	}boneData;
-
-	// Animation
 	struct AnimationHeader
 	{
 		unsigned int version;
 		unsigned int skeletonID;
 		unsigned int framerate;
 		unsigned int nrOfLayers;
+		unsigned nrOfBones;
 	}animHeader;
+
+	struct BindPoseData
+	{
+		int parent;
+		DirectX::XMFLOAT4X4 bindPose;
+	};
+
+	struct FrameData
+	{
+		DirectX::XMFLOAT3 translation;
+		DirectX::XMFLOAT4 rotation;
+		DirectX::XMFLOAT3 scale;
+	};
 
 	struct BoneAnimation
 	{
-		std::vector<Transform> tranform;
+		std::vector<FrameData> tranform;
 	};
 
 	struct AnimationLayers
 	{
-		unsigned int nrOfKeys;
-		std::vector<float> times;
-		std::vector<unsigned int> keys;
-		vector<BoneAnimation> bones;
+		unsigned int nrOfFrames;
+		std::vector<float> time;
+		std::vector<BoneAnimation> bones;
 	};
-	vector<AnimationLayers> animLayer;
+
+	std::vector<AnimationLayers> animLayer;
+	std::vector<BindPoseData> bindPose;
 
 	// Interpolation
 	vector<XMFLOAT4X4> toParentTransforms;

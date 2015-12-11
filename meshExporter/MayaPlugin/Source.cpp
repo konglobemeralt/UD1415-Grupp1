@@ -1,5 +1,6 @@
 #include "maya_includes.h"
 #include "Structs.h"
+#include "Skeleton.h"
 #include <iostream>
 #include <fstream>
 #include <DirectXMath.h>
@@ -12,6 +13,9 @@
 using namespace DirectX;
 using namespace std;
 
+#pragma comment (lib, "d3d11.lib")
+#pragma comment (lib, "d3dcompiler.lib")
+
 //UI
 void initUI();
 void deleteUI();
@@ -23,10 +27,17 @@ Geometry ExtractGeometry(MFnMesh &mesh);
 Material ExtractMaterial(MFnMesh &mesh);
 bool ExportMesh(MFnDagNode &primaryMeshDag);
 void ExportFile(Mesh &mesh, std::string path);
+void ExportAnimation();
+void GetBindPose(MObject& object, unsigned int index);
+void GetAnimationLayer();
+void GetAnimation();
+void WriteAnimationData(std::string path);
 
 //fileNameExtract
 string getFileName(const string& string);
 MString skeleton;
+
+Animation anim;
 
 class exportAll : public MPxCommand
 {
@@ -71,6 +82,27 @@ public:
 
 };
 
+class exportSkeleton : public MPxCommand
+{
+public:
+	exportSkeleton() {};
+	~exportSkeleton() {};
+
+	virtual MStatus doIt(const MArgList&)
+	{
+		setResult("exportSkeleton Called\n");
+		MGlobal::displayInfo("Third Button press!");
+		ExportAnimation();
+		return MS::kSuccess;
+	}
+
+	static void* creator()
+	{
+		return new exportSkeleton;
+	}
+
+};
+
 class updateSkeleton : public MPxCommand
 {
 public:
@@ -109,6 +141,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 	// register our commands with maya
 	status = plugin.registerCommand("exportAll", exportAll::creator);
 	status = plugin.registerCommand("exportSelected", exportSelected::creator);
+	status = plugin.registerCommand("exportSkeleton", exportSkeleton::creator);
 	status = plugin.registerCommand("updateSkeleton", updateSkeleton::creator);
 
 	initUI();
@@ -134,6 +167,7 @@ EXPORT MStatus uninitializePlugin(MObject obj)
 	// deregister our commands with maya
 	status = plugin.deregisterCommand("exportAll");
 	status = plugin.deregisterCommand("exportSelected");
+	status = plugin.deregisterCommand("exportSkeleton");
 	status = plugin.deregisterCommand("updateSkeleton");
 
 	deleteUI();
@@ -150,6 +184,7 @@ void initUI()
 	MGlobal::executeCommand("columnLayout -columnAttach ""left"" 5 -rowSpacing 5 -columnWidth 100;");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Everything"" -command ""exportAll"";");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Selected"" -command ""exportSelected"";");
+	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Skeleton"" -command ""exportSkeleton"";");
 	MGlobal::executeCommand("text -label ""Skeleton"";");
 	MGlobal::executeCommand("$skeleton = `textFieldGrp -changeCommand ""updateSkeleton"" -text ""Unrigged"" `;");
 	MGlobal::executeCommand("textFieldGrp -q -text $skeleton;", skeleton);
@@ -173,12 +208,10 @@ void ExportFinder(bool sl)//sl(selected) sätts genom knapparnas call till Export
 	if (sl)
 	{
 		MGlobal::executeCommand("ls -sl", scene);
-		MGlobal::displayInfo("Pretending To Export Selected!!");
 	}
 	else
 	{
 		MGlobal::executeCommand("ls", scene);
-		MGlobal::displayInfo("Pretending To Export Everything!!");
 	}
 
 	//hitta alla meshes i scenen, kolla mot objekt i listan och om de ligger på toppnivå. Kalla ExportMesh på alla som klarar
@@ -399,6 +432,229 @@ void OutputSkinCluster(MObject &obj, Geometry &mesh, MString name)
 				}
 			}
 		}
+	}
+}
+
+void ExportAnimation()
+{
+	// Get bind pose
+	MGlobal::executeCommand("dagPose -restore -global -bindPose", false, true);
+	MStatus stat;
+	MItDependencyNodes itJoint(MFn::kJoint, &stat);
+	MGlobal::displayInfo("LOOK HERE " + stat.errorString());
+	unsigned int index = 0;
+	for (; !itJoint.isDone(); itJoint.next()) {
+		GetBindPose(itJoint.item(), index);
+		index++;
+	}
+	if (index != 0)
+	{
+		MGlobal::executeCommand("undo", false, true);
+		anim.animHeader.version = 1;
+		anim.animHeader.skeletonID = 0;
+		anim.animHeader.nrOfBones = index;
+
+		// Convert bind pose from local to world
+		vector<XMFLOAT4X4> toRootTransform(anim.animHeader.nrOfBones);
+		toRootTransform[0] = anim.bindPose[0].bindPose;
+		for (size_t i = 1; i < anim.animHeader.nrOfBones; i++)
+		{
+			XMMATRIX toParent = XMLoadFloat4x4(&anim.bindPose[i].bindPose);
+			XMMATRIX parentToRoot = XMLoadFloat4x4(&toRootTransform[anim.bindPose[i].parent]);
+			XMMATRIX toRoot = toParent * parentToRoot;
+			XMStoreFloat4x4(&toRootTransform[i], toRoot);
+		}
+		for (size_t i = 0; i < anim.animHeader.nrOfBones; i++)
+		{
+			XMMATRIX temp = XMLoadFloat4x4(&toRootTransform[i]);
+			temp = XMMatrixInverse(nullptr, temp);
+			XMStoreFloat4x4(&anim.bindPose[i].bindPose, temp);
+		}
+
+		// Fill animation layer header
+		anim.animHeader.version = 1;
+		anim.animHeader.skeletonID = 0;
+		anim.animHeader.framerate = 60;
+		anim.animHeader.nrOfLayers = 0;
+
+		// Get animation layers
+		GetAnimationLayer();
+
+		// Get animation
+		GetAnimation();
+
+		char userPath[MAX_PATH];
+		SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);
+		WriteAnimationData((string)userPath + "/Google Drive/Stort spelprojekt/ExportedModels/HUMANANIMATION.anim");
+	}
+}
+
+void GetBindPose(MObject& object, unsigned int index)
+{
+	MFnIkJoint joint(object);
+	anim.bindPose.push_back(Animation::BindPoseData());
+
+	// Get hierarchy
+	anim.boneNames.append(joint.partialPathName());
+	MGlobal::displayInfo(joint.partialPathName());
+	MFnIkJoint parent(joint.parent(0));
+	if (index == 0) 
+	{
+		anim.bindPose[index].parent = -1;
+	}
+	else if (anim.boneNames[index - 1] == parent.partialPathName()) 
+	{
+		anim.bindPose[index].parent = index - 1;
+	}
+	else 
+	{
+		for (size_t i = 0; i < anim.boneNames.length(); i++) 
+		{
+			if (anim.boneNames[i] == parent.partialPathName()) 
+			{
+				anim.bindPose[index].parent = i;
+			}
+		}
+	}
+
+	// Get matrix
+	double scale[3];
+	double rot[4];
+	MVector translation = joint.getTranslation(MSpace::kTransform);
+	joint.getRotationQuaternion(rot[0], rot[1], rot[2], rot[3]);
+	joint.getScale(scale);
+	XMVECTOR zero = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+	XMVECTOR translationV = XMVectorSet(translation.x, translation.y, -translation.z, 0.0f);
+	XMVECTOR rotationV = XMVectorSet(rot[0], rot[1], -rot[2], -rot[3]);
+	XMVECTOR scaleV = XMVectorSet(scale[0], scale[1], scale[2], 0.0f);
+
+	DirectX::XMStoreFloat4x4(&anim.bindPose.back().bindPose, XMMatrixAffineTransformation(scaleV, zero, rotationV, translationV));
+}
+
+void GetAnimationLayer()
+{
+	MAnimControl animControl;
+	MTime time = animControl.playbackSpeed();
+	float playBackSpeed = time.value();
+
+	MItDependencyNodes itJointAnim(MFn::kJoint);
+	for (; !itJointAnim.isDone(); itJointAnim.next()) {
+		MFnDependencyNode depNodeAnim(itJointAnim.item());
+		MPlug animPlug = depNodeAnim.findPlug("translateX");
+		MPlugArray animPlugArray;
+		animPlug.connectedTo(animPlugArray, false, true);
+
+		for (size_t i = 0; i < animPlugArray.length(); i++) {
+			MObject layerObject = animPlugArray[i].node();
+			if (layerObject.hasFn(MFn::kAnimLayer)) {
+				anim.animHeader.nrOfLayers++;
+				anim.animLayer.resize(anim.animHeader.nrOfLayers);
+				anim.animLayer.back().nrOfFrames = 0;
+				anim.animLayer.back().layerObject = layerObject;
+
+				MFnDependencyNode layerDepNode(layerObject);
+				MPlug layerPlug = layerDepNode.findPlug("foregroundWeight");
+				MPlugArray layerPlugArray;
+				layerPlug.connectedTo(layerPlugArray, false, true);
+
+				bool addednrOfKeys = false;
+				for (size_t j = 0; j < layerPlugArray.length(); j++) {
+					MObject blendObject = layerPlugArray[j].node();
+					if (blendObject.hasFn(MFn::kBlendNodeDoubleLinear)) {
+						MFnDependencyNode blendDepNode(blendObject);
+						MPlug blendPlug = blendDepNode.findPlug("inputA");	// Maybe should be inputB
+						MPlugArray blendPlugArray;
+						blendPlug.connectedTo(blendPlugArray, true, false);
+
+						for (size_t k = 0; k < blendPlugArray.length(); k++) {
+							MObject curveObject = blendPlugArray[k].node();
+							if (curveObject.hasFn(MFn::kAnimCurve)) {
+								MFnAnimCurve rootCurve(curveObject);
+
+								if (rootCurve.numKeys() > 0 && addednrOfKeys == false) {
+									for (size_t l = 0; l < rootCurve.numKeys(); l++) {
+										time = rootCurve.time(l);
+										anim.animLayer.back().nrOfFrames++;
+										anim.animLayer.back().time.push_back((time.value() / 60.0f) * playBackSpeed);
+										anim.animLayer.back().key.push_back((time.value()));
+									}
+									addednrOfKeys = true;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void GetAnimation()
+{
+	MTime time;
+	MAnimControl animControl;
+
+	for (size_t i = 0; i < anim.animHeader.nrOfLayers; i++) {
+		MFnDependencyNode layerDepNode(anim.animLayer.back().layerObject);
+		MGlobal::executeCommand("animLayer -solo true -edit " + layerDepNode.name(), false, true);
+
+		MItDependencyNodes itJointKeys(MFn::kJoint);
+		unsigned int boneIndex = 0;
+		for (; !itJointKeys.isDone(); itJointKeys.next()) {
+			anim.animLayer[i].bones.resize(anim.animLayer[i].bones.size() + 1);
+			for (size_t j = 0; j < anim.animLayer[i].nrOfFrames; j++) {
+				time.setValue(anim.animLayer[i].key[j]);
+				animControl.setCurrentTime(time);
+
+				// Get matrix
+				MFnIkJoint joint(itJointKeys.item());
+				double scale[3];
+				double rot[4];
+				MVector translation = joint.getTranslation(MSpace::kTransform);
+				joint.getRotationQuaternion(rot[0], rot[1], rot[2], rot[3]);
+				joint.getScale(scale);
+				anim.animLayer[i].bones[boneIndex].tranform.push_back(Animation::FrameData());
+				anim.animLayer[i].bones[boneIndex].tranform.back().translation = XMFLOAT3(translation.x, translation.y, -translation.z);
+				anim.animLayer[i].bones[boneIndex].tranform.back().rotation = XMFLOAT4(rot[0], rot[1], -rot[2], -rot[3]);
+				anim.animLayer[i].bones[boneIndex].tranform.back().scale = XMFLOAT3(scale[0], scale[1], scale[2]);
+			}
+			boneIndex++;
+		}
+		MGlobal::executeCommand("animLayer -solo false -edit " + layerDepNode.name(), false, true);
+	}
+
+	time.setValue(1);
+	animControl.setCurrentTime(time);
+}
+
+void WriteAnimationData(std::string path)
+{
+	std::ofstream outfile;
+	// Skeleton
+	outfile.open(path, std::ofstream::binary);
+
+	if (outfile)
+	{
+		// Skeleton header
+		outfile.write((char*)&anim.animHeader, sizeof(Animation::AnimationHeader));
+		for (size_t i = 0; i < anim.animHeader.nrOfLayers; i++)
+		{
+			outfile.write((char*)&anim.animLayer[i].nrOfFrames, sizeof(int));
+		}
+		// Parents and bindposes
+		outfile.write((char*)anim.bindPose.data(), sizeof(Animation::BindPoseData) * anim.animHeader.nrOfBones);
+
+		// frames per layer
+		for (size_t i = 0; i < anim.animHeader.nrOfLayers; i++)
+		{
+			outfile.write((char*)anim.animLayer[i].time.data(), sizeof(float) * anim.animLayer[i].nrOfFrames);
+
+			for (size_t j = 0; j < anim.animHeader.nrOfBones; j++)
+			{
+				outfile.write((char*)anim.animLayer[i].bones[j].tranform.data(), sizeof(Animation::FrameData) * anim.animLayer[i].nrOfFrames);
+			}
+		}
+		outfile.close();
 	}
 }
 

@@ -129,11 +129,10 @@ void D3D::Create()
 	cameraBuffers[1] = CreateConstantBuffer(sizeof(XMFLOAT4X4), &cameraMatrices[1]);
 	CreateTexture();
 
-	string name = "basemanBody";
-	string fileDir = "C:/Users/Spelprojekt/Desktop/Spelprojekt Skeleton test/Files/";
+
 	// Mesh
 	ifstream infile;
-	infile.open(fileDir + name + "_Mesh.bin", std::ofstream::binary);
+	infile.open("C:/Users/Spelprojekt/Desktop/Spelprojekt Skeleton test/Files/basemanBody_Mesh.bin", std::ofstream::binary);
 	if (infile) {
 		unsigned int meshSize = 0;
 		infile.read((char*)&meshSize, sizeof(int));
@@ -144,58 +143,49 @@ void D3D::Create()
 		meshBuffer = CreateMesh(sizeof(MeshData) * meshData.size(), meshData.data(), meshData.size());
 		XMStoreFloat4x4(&worldMatrix, XMMatrixIdentity());
 		worldBuffer = CreateConstantBuffer(sizeof(XMFLOAT4X4), &worldMatrix);
+		infile.close();
 	}
 
 	// Skeleton
-	infile.open(fileDir + name + "_Skeleton.bin", std::ofstream::binary);
-	if (infile) {
+	infile.open("C:/Users/Spelprojekt/Google Drive/Stort spelprojekt/ExportedModels/HUMANANIMATION.anim", std::ofstream::binary);
+	if (infile) 
+	{
 		// Skeleton header
-		infile.read((char*)&skelHead, sizeof(SkeletonHeader));
+		infile.read((char*)&animHeader, sizeof(AnimationHeader));
+		animLayer.resize(animHeader.nrOfLayers);
+		for (size_t i = 0; i < animHeader.nrOfLayers; i++)
+		{
+			infile.read((char*)&animLayer[i].nrOfFrames, sizeof(int));
+		}
 
 		// Parents and bindposes
-		boneData.parent.resize(skelHead.nrOfBones);
-		boneData.bindPose.resize(skelHead.nrOfBones);
-		infile.read((char*)boneData.parent.data(), sizeof(int) * skelHead.nrOfBones);
-		infile.read((char*)boneData.bindPose.data(), sizeof(XMFLOAT4X4) * skelHead.nrOfBones);
-		infile.close();
-	}
+		bindPose.resize(animHeader.nrOfBones);
+		infile.read((char*)bindPose.data(), sizeof(BindPoseData) * animHeader.nrOfBones);
 
-	// Animation
-	infile.open(fileDir + name + "_Animation.bin", std::ofstream::binary);
-	if (infile) {
-		// Animation header
-		infile.read((char*)&animHeader, sizeof(AnimationHeader));
-
-		// Number of keys
-		animLayer.resize(animHeader.nrOfLayers);
-		for (size_t i = 0; i < animHeader.nrOfLayers; i++){
-			infile.read((char*)&animLayer[i].nrOfKeys, sizeof(int));
-		}
-
-		// Keys and transforms
-		for (size_t i = 0; i < animHeader.nrOfLayers; i++) {
-			animLayer[i].times.resize(animLayer[i].nrOfKeys);
-			animLayer[i].keys.resize(animLayer[i].nrOfKeys);
-			infile.read((char*)animLayer[i].times.data(), sizeof(float) * animLayer[i].nrOfKeys);
-			infile.read((char*)animLayer[i].keys.data(), sizeof(int) * animLayer[i].nrOfKeys);
-			animLayer[i].bones.resize(skelHead.nrOfBones);
-
-			for (size_t j = 0; j < skelHead.nrOfBones; j++) {
-				animLayer[i].bones[j].tranform.resize(animLayer[i].nrOfKeys);
-				infile.read((char*)animLayer[i].bones[j].tranform.data(), sizeof(Transform) * animLayer[i].nrOfKeys);
+		// Frames per layer
+		for (size_t i = 0; i < animHeader.nrOfLayers; i++)
+		{
+			animLayer[i].time.resize(animLayer[i].nrOfFrames);
+			animLayer[i].bones.resize(animHeader.nrOfBones);
+			infile.read((char*)animLayer[i].time.data(), sizeof(float) * animLayer[i].nrOfFrames);
+			for (size_t j = 0; j < animHeader.nrOfBones; j++)
+			{
+				animLayer[i].bones[j].tranform.resize(animLayer[i].nrOfFrames);
+				infile.read((char*)animLayer[i].bones[j].tranform.data(), sizeof(FrameData) * animLayer[i].nrOfFrames);
 			}
 		}
+
 		infile.close();
 
 		// Fix buffers to interpolation
-		toParentTransforms.resize(skelHead.nrOfBones);
-		toRootTransforms.resize(skelHead.nrOfBones);
-		finalTransforms.resize(skelHead.nrOfBones);
-		boneStruct = new BoneStruct[skelHead.nrOfBones];
+		toParentTransforms.resize(animHeader.nrOfBones);
+		toRootTransforms.resize(animHeader.nrOfBones);
+		finalTransforms.resize(animHeader.nrOfBones);
+		boneStruct = new BoneStruct[animHeader.nrOfBones];
 
 		D3D11_BUFFER_DESC constantBufferBonesDesc;
 		memset(&constantBufferBonesDesc, 0, sizeof(constantBufferBonesDesc));
-		constantBufferBonesDesc.ByteWidth = sizeof(BoneStruct) * skelHead.nrOfBones;
+		constantBufferBonesDesc.ByteWidth = sizeof(BoneStruct) * animHeader.nrOfBones;
 		constantBufferBonesDesc.Usage = D3D11_USAGE_DYNAMIC;
 		constantBufferBonesDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		constantBufferBonesDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -205,7 +195,7 @@ void D3D::Create()
 
 void D3D::Interpolate(XMFLOAT4X4& matrix, float time, unsigned int boneIndex, unsigned int layer)
 {
-	if (time <= animLayer[layer].times[0])
+	if (time <= animLayer[layer].time[0])
 	{
 		XMVECTOR s = XMLoadFloat3(&animLayer[layer].bones[boneIndex].tranform[0].scale);
 		XMVECTOR p = XMLoadFloat3(&animLayer[layer].bones[boneIndex].tranform[0].translation);
@@ -215,11 +205,11 @@ void D3D::Interpolate(XMFLOAT4X4& matrix, float time, unsigned int boneIndex, un
 		XMStoreFloat4x4(&matrix, XMMatrixAffineTransformation(s, zero, q, p));
 	}
 
-	else if (time >= animLayer[layer].times[animLayer[layer].nrOfKeys - 1])
+	else if (time >= animLayer[layer].time[animLayer[layer].nrOfFrames - 1])
 	{
-		XMVECTOR s = XMLoadFloat3(&animLayer[layer].bones[boneIndex].tranform[animLayer[layer].nrOfKeys - 1].scale);
-		XMVECTOR p = XMLoadFloat3(&animLayer[layer].bones[boneIndex].tranform[animLayer[layer].nrOfKeys - 1].translation);
-		XMVECTOR q = XMLoadFloat4(&animLayer[layer].bones[boneIndex].tranform[animLayer[layer].nrOfKeys - 1].rotation);
+		XMVECTOR s = XMLoadFloat3(&animLayer[layer].bones[boneIndex].tranform[animLayer[layer].nrOfFrames - 1].scale);
+		XMVECTOR p = XMLoadFloat3(&animLayer[layer].bones[boneIndex].tranform[animLayer[layer].nrOfFrames - 1].translation);
+		XMVECTOR q = XMLoadFloat4(&animLayer[layer].bones[boneIndex].tranform[animLayer[layer].nrOfFrames - 1].rotation);
 		XMVECTOR zero = XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
 
 		XMStoreFloat4x4(&matrix, XMMatrixAffineTransformation(s, zero, q, p));
@@ -227,10 +217,10 @@ void D3D::Interpolate(XMFLOAT4X4& matrix, float time, unsigned int boneIndex, un
 
 	else
 	{
-		for (int i = 0; i <= animLayer[layer].nrOfKeys; i++)
+		for (int i = 0; i <= animLayer[layer].nrOfFrames; i++)
 		{
-			currTime = animLayer[layer].times[i];
-			nextTime = animLayer[layer].times[i + 1];
+			currTime = animLayer[layer].time[i];
+			nextTime = animLayer[layer].time[i + 1];
 			if (time >= currTime && time <= nextTime)
 			{
 				lerpPercent = (time - currTime) / (nextTime - currTime);
@@ -259,26 +249,26 @@ void D3D::Interpolate(XMFLOAT4X4& matrix, float time, unsigned int boneIndex, un
 
 void D3D::UpdateBones(float time, unsigned int layer)
 {
-	for (int i = 0; i < skelHead.nrOfBones; i++)
+	for (int i = 0; i < animHeader.nrOfBones; i++)
 	{
 		Interpolate(toParentTransforms[i], time, i, layer);
 	}
 
 	toRootTransforms[0] = toParentTransforms[0];
 
-	for (int i = 1; i < skelHead.nrOfBones; i++)
+	for (int i = 1; i < animHeader.nrOfBones; i++)
 	{
 		// Current bone transform relative to its parent
 		XMMATRIX toParent = XMLoadFloat4x4(&toParentTransforms[i]); // Bone[i] toParentTransform
 																	// Current bone parent tramnsform relative to Root 
-		XMMATRIX parentToRoot = XMLoadFloat4x4(&toRootTransforms[boneData.parent[i]]); // Parent Bone[i] toRootTransform
+		XMMATRIX parentToRoot = XMLoadFloat4x4(&toRootTransforms[bindPose[i].parent]); // Parent Bone[i] toRootTransform
 		XMMATRIX toRoot = XMMatrixMultiply(toParent, parentToRoot);
 		XMStoreFloat4x4(&toRootTransforms[i], toRoot); // toRootTransforms[i] = ToRoot
 	}
 
-	for (int i = 0; i < skelHead.nrOfBones; i++)
+	for (int i = 0; i < animHeader.nrOfBones; i++)
 	{
-		XMMATRIX offset = XMLoadFloat4x4(&boneData.bindPose[i]); // Inverse Bindpose
+		XMMATRIX offset = XMLoadFloat4x4(&bindPose[i].bindPose); // Inverse Bindpose
 		XMMATRIX toRoot = XMLoadFloat4x4(&toRootTransforms[i]);
 		XMStoreFloat4x4(&finalTransforms[i], XMMatrixMultiply(offset, toRoot)); // Store final matrix
 	}
@@ -289,7 +279,7 @@ void D3D::Update()
 	devcon->Map(boneBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subMapBones);
 	boneStruct = (BoneStruct*)subMapBones.pData;
 
-	for (int i = 0; i < skelHead.nrOfBones; i++){
+	for (int i = 0; i < animHeader.nrOfBones; i++){
 		XMStoreFloat4x4(&boneStruct->bone[i], XMMatrixTranspose(XMLoadFloat4x4(&finalTransforms[i])));
 	}
 
