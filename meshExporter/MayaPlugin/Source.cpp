@@ -295,6 +295,38 @@ vector<VertexOut> UnpackVertices(vector<Point>* points, vector<Normal>* normals,
 	return vertices;
 }
 
+vector<WeightedVertexOut> UnpackWeightedVertices(vector<Point>* points, vector<Normal>* normals, vector<TexCoord>* UVs, vector<Face>* vertexIndices)
+{
+	vector<WeightedVertexOut> vertices;
+
+	for (int i = 0; i < vertexIndices->size(); i++) {
+		for (int a = 2; a > -1; a--) {
+			WeightedVertexOut tempVertex;
+			tempVertex.pos[0] = points->at(vertexIndices->at(i).verts[a].pointID).x;
+			tempVertex.pos[1] = points->at(vertexIndices->at(i).verts[a].pointID).y;
+			tempVertex.pos[2] = points->at(vertexIndices->at(i).verts[a].pointID).z;
+			tempVertex.nor[0] = normals->at(vertexIndices->at(i).verts[a].normalID).x;
+			tempVertex.nor[1] = normals->at(vertexIndices->at(i).verts[a].normalID).y;
+			tempVertex.nor[2] = normals->at(vertexIndices->at(i).verts[a].normalID).z;
+			tempVertex.uv[0] = UVs->at(vertexIndices->at(i).verts[a].texCoordID).u;
+			tempVertex.uv[1] = UVs->at(vertexIndices->at(i).verts[a].texCoordID).v;
+
+			tempVertex.influences[0] = points->at(vertexIndices->at(i).verts[a].pointID).boneIndices[0];
+			tempVertex.influences[1] = points->at(vertexIndices->at(i).verts[a].pointID).boneIndices[1];
+			tempVertex.influences[2] = points->at(vertexIndices->at(i).verts[a].pointID).boneIndices[2];
+			tempVertex.influences[3] = points->at(vertexIndices->at(i).verts[a].pointID).boneIndices[3];
+
+			tempVertex.weights[0] = points->at(vertexIndices->at(i).verts[a].pointID).boneWeigths[0];
+			tempVertex.weights[1] = points->at(vertexIndices->at(i).verts[a].pointID).boneWeigths[1];
+			tempVertex.weights[2] = points->at(vertexIndices->at(i).verts[a].pointID).boneWeigths[2];
+			tempVertex.weights[3] = points->at(vertexIndices->at(i).verts[a].pointID).boneWeigths[3];
+
+			vertices.push_back(tempVertex);
+		}
+	}
+	return vertices;
+}
+
 void OutputSkinCluster(MObject &obj, Geometry &mesh, MString name)
 {
 	// attach a skin cluster function set to
@@ -480,7 +512,10 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 	for (MItDependencyNodes it(MFn::kSkinClusterFilter); !it.isDone(); it.next())
 		OutputSkinCluster(it.item(), geometry, mesh.partialPathName());
 
-	geometry.vertices = UnpackVertices(&geometry.points, &geometry.normals, &geometry.texCoords, &geometry.faces);
+	if (strcmp(skeleton.asChar(), "Unrigged"))
+		geometry.weightedVertices = UnpackWeightedVertices(&geometry.points, &geometry.normals, &geometry.texCoords, &geometry.faces);
+	else
+		geometry.vertices = UnpackVertices(&geometry.points, &geometry.normals, &geometry.texCoords, &geometry.faces);
 
 	return geometry;
 }
@@ -652,7 +687,7 @@ void ExportFile(Mesh &mesh, std::string path)
 	mainHeader.meshCount = (int)mesh.subMeshes.size();
 	outfile.write((const char*)&mainHeader, sizeof(MainHeader));
 
-	int skeletonStringLength = mesh.skeletonID.size();
+	int skeletonStringLength = (int)mesh.skeletonID.size();
 	outfile.write((const char*)&skeletonStringLength, 4);
 	outfile.write(mesh.skeletonID.data(), skeletonStringLength);
 
