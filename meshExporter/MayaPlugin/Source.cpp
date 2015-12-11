@@ -857,7 +857,12 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 	//Exporterar en mesh och alla dess submeshes. Testar alla subs att deras parent är primaryMesh
 	MGlobal::displayInfo(MString("Extracting Primary Mesh " + primaryMeshDag.name()));
 
+	MStatus stat;
 	MFnMesh meshFN(primaryMeshDag.child(0));
+	MFnMesh test(primaryMeshDag.child(1), &stat);
+	MGlobal::displayInfo(MString("TITTA HÄR: ") + primaryMeshDag.childCount());
+	//MGlobal::displayInfo("TITTA HÄR: " + test.name());
+
 	Mesh primaryMesh;
 	primaryMesh.Name = primaryMeshDag.name().asChar();
 	primaryMesh.geometry = ExtractGeometry(meshFN);
