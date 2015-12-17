@@ -382,8 +382,8 @@ void OutputSkinCluster(MObject &obj, Geometry &mesh, MString name)
 		fn.getPathAtIndex(index, skinPath);
 
 		MGlobal::displayInfo(skinPath.partialPathName());
-		MGlobal::displayInfo(name);
-		if (strcmp(skinPath.partialPathName().asChar(), name.asChar()))
+		MGlobal::displayInfo(name.substring(0, name.length() - 5));
+		if (strcmp(skinPath.partialPathName().asChar(), name.substring(0, name.length() - 5).asChar()))
 			return;
 
 		// iterate through the components of this geometry
@@ -450,7 +450,7 @@ void ExportAnimation()
 	if (index != 0)
 	{
 		MGlobal::executeCommand("undo", false, true);
-		anim.animHeader.version = 1;
+		anim.animHeader.version = 10;
 		anim.animHeader.nrOfBones = index;
 
 		// Convert bind pose from local to world
@@ -471,7 +471,7 @@ void ExportAnimation()
 		}
 
 		// Fill animation layer header
-		anim.animHeader.version = 1;
+		anim.animHeader.version = 10;
 		anim.animHeader.framerate = 60;
 		anim.animHeader.nrOfLayers = 0;
 
@@ -891,7 +891,8 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 	MGlobal::displayInfo(MString("Extracting Primary Mesh " + primaryMeshDag.name()));
 
 	MFnMesh* meshFN;
-	if(primaryMeshDag.childCount() > 1)
+	MFnMesh meshFNForMaterial(primaryMeshDag.child(0));
+	if (primaryMeshDag.childCount() > 1)
 		meshFN = new MFnMesh(primaryMeshDag.child(1));
 	else
 		meshFN = new MFnMesh(primaryMeshDag.child(0));
@@ -902,7 +903,7 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 	Mesh primaryMesh;
 	primaryMesh.Name = primaryMeshDag.name().asChar();
 	primaryMesh.geometry = ExtractGeometry(*meshFN);
-	primaryMesh.material = ExtractMaterial(*meshFN);
+	primaryMesh.material = ExtractMaterial(meshFNForMaterial);
 	primaryMesh.skeletonID = skeleton.asChar();
 
 	MItDag subMeshes(MItDag::kBreadthFirst, MFn::kMesh);

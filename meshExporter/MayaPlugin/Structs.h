@@ -41,7 +41,7 @@ struct VertexOut
 
 struct WeightedVertexOut
 {
-	short influences[4];
+	uint influences[4];
 	float pos[3], nor[3], uv[2], weights[4];
 };
 
