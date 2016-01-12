@@ -22,8 +22,8 @@ void deleteUI();
 
 //export
 void ExportFinder(bool sl);
-void ExtractLights(MFnMesh &mesh, Geometry &geometry);
-Geometry ExtractGeometry(MFnMesh &mesh);
+void ExtractLights(Mesh &mesh);
+Geometry ExtractGeometry(MFnMesh &mesh, int index);
 Material ExtractMaterial(MFnMesh &mesh);
 bool ExportMesh(MFnDagNode &primaryMeshDag);
 void ExportFile(Mesh &mesh, std::string path);
@@ -303,7 +303,7 @@ void GenerateHitboxes()
 	}
 }
 
-void ExtractLights(MFnMesh &meshDag, Geometry &geometry)
+void ExtractLights(Mesh &mesh)
 {
 	MItDag iter(MItDag::kBreadthFirst, MFn::kLight);
 	while (!iter.isDone())
@@ -311,61 +311,102 @@ void ExtractLights(MFnMesh &meshDag, Geometry &geometry)
 		if (iter.item().hasFn(MFn::kPointLight))
 		{
 			MFnPointLight point = iter.item();
-			geometry.pointLights.push_back(PointLight());
+			PointLight pointLight;
 
-			for (size_t i = 0; i < point.parentCount(); i++)
+			MFnTransform lightTransform(point.parent(0));
+			MFnTransform parent(lightTransform.parent(0));
+			MVector translation = parent.translation(MSpace::kObject);
+			pointLight.pos[0] = (float)translation.x;
+			pointLight.pos[1] = (float)translation.y;
+			pointLight.pos[2] = (float)translation.z;
+
+			pointLight.col[0] = point.color().r;
+			pointLight.col[1] = point.color().g;
+			pointLight.col[2] = point.color().b;
+			pointLight.intensity = point.intensity();
+
+			if (parent.object().hasFn(MFn::kJoint))
 			{
-				MObject parent = point.parent((uint)i);
-				if (parent.hasFn(MFn::kTransform))
+				MItDag joints(MItDag::kDepthFirst, MFn::kJoint);
+				int i = 0;
+				while (!joints.isDone())
 				{
-					MFnTransform transform(parent);
-					MVector translation = transform.translation(MSpace::kObject);
-					geometry.pointLights.back().pos[0] = (float)translation.x;
-					geometry.pointLights.back().pos[1] = (float)translation.y;
-					geometry.pointLights.back().pos[2] = (float)translation.z;
-					break;
+					MFnIkJoint jointsCurr(joints.currentItem());
+					if (!strcmp(jointsCurr.name().asChar(), parent.name().asChar()))
+						pointLight.bone = i;
+					i++;
+					joints.next();
 				}
+
+				MPlug plug;
+				plug = lightTransform.findPlug("mesh");
+				short meshId = (short)plug.asInt();
+
+				if (meshId == 0)
+					mesh.geometry.pointLights.push_back(pointLight);
+				else
+					mesh.subMeshes[meshId - 1].geometry.pointLights.push_back(pointLight);
 			}
-
-			geometry.pointLights.back().col[0] = point.color().r;
-			geometry.pointLights.back().col[1] = point.color().g;
-			geometry.pointLights.back().col[2] = point.color().b;
-
-			geometry.pointLights.back().intensity = point.intensity();
-
-
+			else if (parent.child(0).hasFn(MFn::kMesh))
+			{
+				if (!strcmp(parent.name().asChar(), mesh.Name.c_str()))
+					mesh.geometry.pointLights.push_back(pointLight);
+				else for (int i = 0; i < mesh.subMeshes.size(); i++)
+					if (!strcmp(parent.name().asChar(), mesh.subMeshes[i].Name.c_str()))
+						mesh.subMeshes[i].geometry.pointLights.push_back(pointLight);
+			}
 		}
 		else if (iter.item().hasFn(MFn::kSpotLight))
 		{
 			MFnSpotLight spot = iter.item();
-			geometry.spotLights.push_back(SpotLight());
+			SpotLight spotlight;
 
+			MFnTransform lightTransform(spot.parent(0));
+			MFnTransform parent(lightTransform.parent(0));
+			MVector translation = parent.translation(MSpace::kObject);
+			spotlight.pos[0] = (float)translation.x;
+			spotlight.pos[1] = (float)translation.y;
+			spotlight.pos[2] = (float)translation.z;
 
-			for (size_t i = 0; i < spot.parentCount(); i++)
+			spotlight.col[0] = spot.color().r;
+			spotlight.col[1] = spot.color().g;
+			spotlight.col[2] = spot.color().b;
+			spotlight.intensity = spot.intensity();
+			spotlight.angle = (float)spot.coneAngle();
+			spotlight.direction[0] = spot.lightDirection().x;
+			spotlight.direction[1] = spot.lightDirection().y;
+			spotlight.direction[2] = spot.lightDirection().z;
+
+			if (parent.object().hasFn(MFn::kJoint))
 			{
-				MObject parent = spot.parent((uint)i);
-				if (parent.hasFn(MFn::kTransform))
+				MItDag joints(MItDag::kDepthFirst, MFn::kJoint);
+				int i = 0;
+				while (!joints.isDone())
 				{
-					MFnTransform transform(parent);
-					MVector translation = transform.translation(MSpace::kObject);
-					geometry.spotLights.back().pos[0] = (float)translation.x;
-					geometry.spotLights.back().pos[1] = (float)translation.y;
-					geometry.spotLights.back().pos[2] = (float)translation.z;
-					break;
+					MFnIkJoint jointsCurr(joints.currentItem());
+					if (!strcmp(jointsCurr.name().asChar(), parent.name().asChar()))
+						spotlight.bone = i;
+					i++;
+					joints.next();
 				}
+
+				MPlug plug;
+				plug = lightTransform.findPlug("mesh");
+				short meshId = (short)plug.asInt();
+
+				if (meshId == 0)
+					mesh.geometry.spotLights.push_back(spotlight);
+				else
+					mesh.subMeshes[meshId - 1].geometry.spotLights.push_back(spotlight);
 			}
-
-			geometry.spotLights.back().col[0] = spot.color().r;
-			geometry.spotLights.back().col[1] = spot.color().g;
-			geometry.spotLights.back().col[2] = spot.color().b;
-
-			geometry.spotLights.back().intensity = spot.intensity();
-
-			geometry.spotLights.back().angle = (float)spot.coneAngle();
-
-			geometry.spotLights.back().direction[0] = spot.lightDirection().x;
-			geometry.spotLights.back().direction[1] = spot.lightDirection().y;
-			geometry.spotLights.back().direction[2] = spot.lightDirection().z;
+			else if (parent.object().hasFn(MFn::kMesh))
+			{
+				if (!strcmp(parent.name().asChar(), mesh.Name.c_str()))
+					mesh.geometry.spotLights.push_back(spotlight);
+				else for (int i = 0; i < mesh.subMeshes.size(); i++)
+					if (!strcmp(parent.name().asChar(), mesh.subMeshes[i].Name.c_str()))
+						mesh.subMeshes[i].geometry.spotLights.push_back(spotlight);
+			}
 		}
 		iter.next();
 	}
@@ -720,7 +761,7 @@ void WriteAnimationData(std::string path)
 	}
 }
 
-Geometry ExtractGeometry(MFnMesh &mesh)
+Geometry ExtractGeometry(MFnMesh &mesh, int index)
 {
 	//// Test without polytriangulate - MAYBE NOT WORKING
 	//MItMeshPolygon itPoly(mesh.object());
@@ -765,7 +806,7 @@ Geometry ExtractGeometry(MFnMesh &mesh)
 
 	//samlar data om geometrin och sparar i ett Geometryobjekt
 	Geometry geometry;
-	ExtractLights(mesh, geometry);
+	geometry.index = index;
 	MSpace::Space world_space = MSpace::kTransform;
 
 	MFloatPointArray points;
@@ -966,13 +1007,13 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 
 	Mesh primaryMesh;
 	primaryMesh.Name = primaryMeshDag.name().asChar();
-	primaryMesh.geometry = ExtractGeometry(*meshFN);
+	primaryMesh.geometry = ExtractGeometry(*meshFN, 0);
 	primaryMesh.material = ExtractMaterial(meshFNForMaterial);
 	primaryMesh.skeletonID = skeleton.asChar();
 
 	MItDag subMeshes(MItDag::kBreadthFirst, MFn::kMesh);
 	subMeshes.reset(primaryMeshDag.object(), MItDag::kBreadthFirst, MFn::kMesh);
-
+	int submeshindex = 1;
 	MDagPath dag_path;
 	while (!subMeshes.isDone())
 	{
@@ -989,14 +1030,16 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 
 						MFnMesh subMeshFN(dag_path);
 						SubMesh subMesh;
-						subMesh.Name = dag_node.name().asChar();
-						subMesh.geometry = ExtractGeometry(subMeshFN);
-
+						subMesh.Name = transform.name().asChar();
+						subMesh.geometry = ExtractGeometry(subMeshFN, submeshindex);
+						submeshindex++;
 						primaryMesh.subMeshes.push_back(subMesh);
 					}
 		}
 		subMeshes.next();
 	}
+
+	ExtractLights(primaryMesh);
 
 	char userPath[MAX_PATH];
 	SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);
@@ -1010,7 +1053,7 @@ void ExportFile(Mesh &mesh, std::string path)
 	std::ofstream outfile;
 	outfile.open(path.c_str(), std::ofstream::binary);
 	MainHeader mainHeader;
-	mainHeader.version = 24;
+	mainHeader.version = 25;
 	mainHeader.meshCount = (int)mesh.subMeshes.size();
 	outfile.write((const char*)&mainHeader, sizeof(MainHeader));
 

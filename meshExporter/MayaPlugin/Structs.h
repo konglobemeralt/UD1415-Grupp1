@@ -53,16 +53,19 @@ struct Material
 
 struct PointLight
 {
+	short bone = -1;
 	float pos[3], col[3], intensity;
 };
 
 struct SpotLight
 {
+	short bone;
 	float pos[3], col[3], intensity, angle, direction[3];
 };
 
 struct Geometry
 {
+	int index;
 	std::vector<Point> points;
 	std::vector<Normal> normals;
 	std::vector<TexCoord> texCoords;
