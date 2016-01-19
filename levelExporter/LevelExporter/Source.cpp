@@ -304,7 +304,7 @@ void exportLevelData()
 void exportToFile(levelHeader lvlHead, vector<mapData> mData)
 {
 	string outputPath;
-	string levelName = "level99.lvl";
+	string levelName = "level02.lvl";
 
 	char userPath[MAX_PATH];
 	SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);
@@ -329,7 +329,7 @@ void exportToFile(levelHeader lvlHead, vector<mapData> mData)
 void exportStrToFile()
 {
 	string outputPath;
-	string levelName = "level99.lvltxt";
+	string levelName = "level1DELETETHISFILE.lvltxt";
 
 	char userPath[MAX_PATH];
 	SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);

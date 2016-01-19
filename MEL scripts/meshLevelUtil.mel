@@ -16,6 +16,7 @@ snapMode -grid true;
 			button -w 240 -h 50 -label"Goal Tile" -command "ImportGoalTile";
 			button -w 240 -h 50 -label"Entry Tile"  -command "ImportEntryTile";
 			button -w 240 -h 50 -label"Wall Tile"  -command "ImportWallTile";
+			button -w 240 -h 50 -label"Guard"  -command "ImportGuard";
 			text -label "";  
 			 
 		    rowLayout 
@@ -24,10 +25,7 @@ snapMode -grid true;
           -columnAlign2 "left" "left";
 			button -w 120 -h 50 -label"Rotate 90 L"  -command "rotateL";
 			button -w 120 -h 50 -label"Rotate 90 R"  -command "rotateR";
-			
-		    				
-	       	
-	       	
+				       	
 	// show the window    	       	
 	showWindow $window;;
   
@@ -66,9 +64,17 @@ global proc ImportWallTile()
     
 }
 
+global proc ImportGuard()  
+{
+    string $test = updateHappened();
+    string $path = "C:/Users/"+$test+"/Google Drive/Stort spelprojekt/MayaObjects/Guard.mb";
+    file -import -type "mayaBinary"  -ignoreVersion -ra true -mergeNamespacesOnClash false -namespace "Guard" -options "v=0;p=17;f=0"  -pr $path;
+    
+}
+
 global proc rotateR()  
 {
-       rotate -r -os -fo 0 -90 ;
+    rotate -r -os -fo 0 -90 ;
 }
 
 global proc rotateL()  
