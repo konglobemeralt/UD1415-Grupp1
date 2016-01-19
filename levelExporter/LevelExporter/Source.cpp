@@ -143,6 +143,7 @@ void exportLevelData()
 		MFloatVector tPosition;
 
 		tPosition = transformTemp.translation(MSpace::kTransform);
+		tPosition.z = -tPosition.z;
 
 		int coordX = 0;
 		if (tPosition.x < 0) {
@@ -207,35 +208,53 @@ void exportLevelData()
 			MString tileType = tileEnum.fieldName(0);
 
 			//ID/Data file names
-			if (!strcmp(tileType.asChar(), "floorTile"))
+			if (!strcmp(tileType.asChar(), "Floor"))
+			{
+				MGlobal::displayInfo("tile says " + tileType);
+				mDataString.back().tileType = tileType.asChar();
+				mData.back().tileType = 0;
+			}
+			else if (!strcmp(tileType.asChar(), "Wall"))
 			{
 				MGlobal::displayInfo("tile says " + tileType);
 				mDataString.back().tileType = tileType.asChar();
 				mData.back().tileType = 1;
 			}
-			else if (!strcmp(tileType.asChar(), "wallTile"))
+			else if (!strcmp(tileType.asChar(), "Loot"))
 			{
 				MGlobal::displayInfo("tile says " + tileType);
 				mDataString.back().tileType = tileType.asChar();
 				mData.back().tileType = 2;
 			}
-			else if (!strcmp(tileType.asChar(), "entryTile"))
-			{
-				MGlobal::displayInfo("tile says " + tileType);
-				mDataString.back().tileType = tileType.asChar();
-				mData.back().tileType = 5;
-			}
-			else if (!strcmp(tileType.asChar(), "objectiveTile"))
+			else if (!strcmp(tileType.asChar(), "Spawn"))
 			{
 				MGlobal::displayInfo("tile says " + tileType);
 				mDataString.back().tileType = tileType.asChar();
 				mData.back().tileType = 3;
 			}
-			else if (!strcmp(tileType.asChar(), "unit"))
+			else if (!strcmp(tileType.asChar(), "Trap"))
 			{
 				MGlobal::displayInfo("tile says " + tileType);
 				mDataString.back().tileType = tileType.asChar();
-				mData.back().tileType = 0;
+				mData.back().tileType = 4;
+			}
+			else if (!strcmp(tileType.asChar(), "Trigger"))
+			{
+				MGlobal::displayInfo("tile says " + tileType);
+				mDataString.back().tileType = tileType.asChar();
+				mData.back().tileType = 5;
+			}
+			else if (!strcmp(tileType.asChar(), "Guard"))
+			{
+				MGlobal::displayInfo("tile says " + tileType);
+				mDataString.back().tileType = tileType.asChar();
+				mData.back().tileType = 6;
+			}
+			else if (!strcmp(tileType.asChar(), "Enemy"))
+			{
+				MGlobal::displayInfo("tile says " + tileType);
+				mDataString.back().tileType = tileType.asChar();
+				mData.back().tileType = 7;
 			}
 		}
 		
@@ -285,7 +304,7 @@ void exportLevelData()
 void exportToFile(levelHeader lvlHead, vector<mapData> mData)
 {
 	string outputPath;
-	string levelName = "level4.lvl";
+	string levelName = "level99.lvl";
 
 	char userPath[MAX_PATH];
 	SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);
@@ -310,7 +329,7 @@ void exportToFile(levelHeader lvlHead, vector<mapData> mData)
 void exportStrToFile()
 {
 	string outputPath;
-	string levelName = "level4.lvltxt";
+	string levelName = "level99.lvltxt";
 
 	char userPath[MAX_PATH];
 	SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);
