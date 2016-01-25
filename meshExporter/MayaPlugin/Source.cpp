@@ -337,23 +337,12 @@ void ExtractLights(Mesh &mesh)
 					i++;
 					joints.next();
 				}
-
-				MPlug plug;
-				plug = lightTransform.findPlug("mesh");
-				short meshId = (short)plug.asInt();
-
-				if (meshId == 0)
-					mesh.geometry.pointLights.push_back(pointLight);
-				else
-					mesh.subMeshes[meshId - 1].geometry.pointLights.push_back(pointLight);
+				mesh.geometry.pointLights.push_back(pointLight);
 			}
 			else if (parent.child(0).hasFn(MFn::kMesh))
 			{
 				if (!strcmp(parent.name().asChar(), mesh.Name.c_str()))
 					mesh.geometry.pointLights.push_back(pointLight);
-				else for (int i = 0; i < mesh.subMeshes.size(); i++)
-					if (!strcmp(parent.name().asChar(), mesh.subMeshes[i].Name.c_str()))
-						mesh.subMeshes[i].geometry.pointLights.push_back(pointLight);
 			}
 		}
 		else if (iter.item().hasFn(MFn::kSpotLight))
@@ -389,23 +378,12 @@ void ExtractLights(Mesh &mesh)
 					i++;
 					joints.next();
 				}
-
-				MPlug plug;
-				plug = lightTransform.findPlug("mesh");
-				short meshId = (short)plug.asInt();
-
-				if (meshId == 0)
-					mesh.geometry.spotLights.push_back(spotlight);
-				else
-					mesh.subMeshes[meshId - 1].geometry.spotLights.push_back(spotlight);
+				mesh.geometry.spotLights.push_back(spotlight);
 			}
 			else if (parent.object().hasFn(MFn::kMesh))
 			{
 				if (!strcmp(parent.name().asChar(), mesh.Name.c_str()))
 					mesh.geometry.spotLights.push_back(spotlight);
-				else for (int i = 0; i < mesh.subMeshes.size(); i++)
-					if (!strcmp(parent.name().asChar(), mesh.subMeshes[i].Name.c_str()))
-						mesh.subMeshes[i].geometry.spotLights.push_back(spotlight);
 			}
 		}
 		iter.next();
@@ -1011,34 +989,6 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 	primaryMesh.material = ExtractMaterial(meshFNForMaterial);
 	primaryMesh.skeletonID = skeleton.asChar();
 
-	MItDag subMeshes(MItDag::kBreadthFirst, MFn::kMesh);
-	subMeshes.reset(primaryMeshDag.object(), MItDag::kBreadthFirst, MFn::kMesh);
-	int submeshindex = 1;
-	MDagPath dag_path;
-	while (!subMeshes.isDone())
-	{
-		if (subMeshes.getPath(dag_path))
-		{
-			MFnDagNode dag_node = dag_path.node();
-			MFnDagNode transform = dag_node.parent(0);
-			MFnDagNode parentPath(transform.parent(0));
-
-			if (!strcmp(parentPath.fullPathName().asChar(), primaryMeshDag.fullPathName().asChar()))
-				if (!dag_node.isIntermediateObject())
-					{
-						MGlobal::displayInfo(MString("Extracting subMesh " + dag_node.name()));
-
-						MFnMesh subMeshFN(dag_path);
-						SubMesh subMesh;
-						subMesh.Name = transform.name().asChar();
-						subMesh.geometry = ExtractGeometry(subMeshFN, submeshindex);
-						submeshindex++;
-						primaryMesh.subMeshes.push_back(subMesh);
-					}
-		}
-		subMeshes.next();
-	}
-
 	ExtractLights(primaryMesh);
 
 	char userPath[MAX_PATH];
@@ -1053,8 +1003,7 @@ void ExportFile(Mesh &mesh, std::string path)
 	std::ofstream outfile;
 	outfile.open(path.c_str(), std::ofstream::binary);
 	MainHeader mainHeader;
-	mainHeader.version = 25;
-	mainHeader.meshCount = (int)mesh.subMeshes.size();
+	mainHeader.version = 26;
 	outfile.write((const char*)&mainHeader, sizeof(MainHeader));
 
 	int skeletonStringLength = (int)mesh.skeletonID.size();
@@ -1062,83 +1011,31 @@ void ExportFile(Mesh &mesh, std::string path)
 	outfile.write(mesh.skeletonID.data(), skeletonStringLength);
 
 	MeshHeader meshHeader;
-	meshHeader.nameLength = (int)mesh.Name.length() + 1;
 	if (strcmp(mesh.skeletonID.data(), "Unrigged"))
 		meshHeader.numberOfVertices = (int)mesh.geometry.weightedVertices.size();
 	else
 		meshHeader.numberOfVertices = (int)mesh.geometry.vertices.size();
-	meshHeader.subMeshID = 0;
 	meshHeader.numberPointLights = (int)mesh.geometry.pointLights.size();
 	meshHeader.numberSpotLights = (int)mesh.geometry.spotLights.size();
-	int toMesh = sizeof(MainHeader)+ 4 +skeletonStringLength + sizeof(MeshHeader) + meshHeader.nameLength + (mainHeader.meshCount + 1) * 4;
+	int toMesh = sizeof(MainHeader) + 4 + skeletonStringLength + 4 + sizeof(MeshHeader);
 	outfile.write((char*)&toMesh, 4);
-	if (strcmp(mesh.skeletonID.data(), "Unrigged"))
-		toMesh += meshHeader.numberOfVertices*sizeof(WeightedVertexOut);
-	else
-		toMesh += meshHeader.numberOfVertices*sizeof(VertexOut);
-	toMesh += meshHeader.numberPointLights * sizeof(PointLight) + meshHeader.numberSpotLights * sizeof(SpotLight);
-
-	for (int i = 0; i < mainHeader.meshCount; i++)
-	{
-		meshHeader.nameLength = (int)mesh.Name.length() + 1;
-		if (strcmp(mesh.skeletonID.data(), "Unrigged"))
-			meshHeader.numberOfVertices = (int)mesh.subMeshes[i].geometry.weightedVertices.size();
-		else
-			meshHeader.numberOfVertices = (int)mesh.subMeshes[i].geometry.vertices.size();
-		meshHeader.subMeshID = i + 1;
-		meshHeader.numberPointLights = (int)mesh.subMeshes[i].geometry.pointLights.size();
-		meshHeader.numberSpotLights = (int)mesh.subMeshes[i].geometry.spotLights.size();
-		toMesh += sizeof(MeshHeader) + meshHeader.nameLength;
-		outfile.write((char*)&toMesh, 4);
-		if (strcmp(mesh.skeletonID.data(), "Unrigged"))
-			toMesh += meshHeader.numberOfVertices*sizeof(WeightedVertexOut);
-		else
-			toMesh += meshHeader.numberOfVertices*sizeof(VertexOut);
-		toMesh += meshHeader.numberPointLights * sizeof(PointLight) + meshHeader.numberSpotLights * sizeof(SpotLight);
-	}
 
 	//finding sizes of main mesh contents in header
-	meshHeader.nameLength = (int)mesh.Name.length()+1;
 	if (strcmp(mesh.skeletonID.data(), "Unrigged"))
 		meshHeader.numberOfVertices = (int)mesh.geometry.weightedVertices.size();
 	else
 		meshHeader.numberOfVertices = (int)mesh.geometry.vertices.size();
-	meshHeader.subMeshID = 0;
 	meshHeader.numberPointLights = (int)mesh.geometry.pointLights.size();
 	meshHeader.numberSpotLights = (int)mesh.geometry.spotLights.size();
 	outfile.write((const char*)&meshHeader, sizeof(MeshHeader)); //writing the sizes found in the main mesh header
 
 	//writing the main mesh contents to file according to the sizes of main mesh header
-	outfile.write((const char*)mesh.Name.data(), meshHeader.nameLength);
 	if (strcmp(mesh.skeletonID.data(), "Unrigged"))
 		outfile.write((const char*)mesh.geometry.weightedVertices.data(), meshHeader.numberOfVertices * sizeof(WeightedVertexOut));
 	else
 		outfile.write((const char*)mesh.geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(VertexOut));
 	outfile.write((const char*)mesh.geometry.pointLights.data(), meshHeader.numberPointLights * sizeof(PointLight));
 	outfile.write((const char*)mesh.geometry.spotLights.data(), meshHeader.numberSpotLights * sizeof(SpotLight));
-
-	for (int i = 0; i < mainHeader.meshCount; i++) {
-
-		//finding sizes of submesh contents in header
-		meshHeader.nameLength = (int)mesh.Name.length()+1;
-		if (strcmp(mesh.skeletonID.data(), "Unrigged"))
-			meshHeader.numberOfVertices = (int)mesh.subMeshes[i].geometry.weightedVertices.size();
-		else
-			meshHeader.numberOfVertices = (int)mesh.subMeshes[i].geometry.vertices.size();
-		meshHeader.subMeshID = i + 1;
-		meshHeader.numberPointLights = (int)mesh.subMeshes[i].geometry.pointLights.size();
-		meshHeader.numberSpotLights = (int)mesh.subMeshes[i].geometry.spotLights.size();
-		outfile.write((const char*)&meshHeader, sizeof(MeshHeader));//writing the sizes found in the submesh header
-	
-		//writing the submesh contents to file according to the sizes of main mesh header
-		outfile.write((const char*)mesh.subMeshes[i].Name.data(), meshHeader.nameLength);
-		if (strcmp(mesh.skeletonID.data(), "Unrigged"))
-			outfile.write((const char*)mesh.subMeshes[i].geometry.weightedVertices.data(), meshHeader.numberOfVertices * sizeof(WeightedVertexOut));
-		else
-			outfile.write((const char*)mesh.subMeshes[i].geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(VertexOut));
-		outfile.write((const char*)mesh.subMeshes[i].geometry.pointLights.data(), meshHeader.numberPointLights * sizeof(PointLight));
-		outfile.write((const char*)mesh.subMeshes[i].geometry.spotLights.data(), meshHeader.numberSpotLights * sizeof(SpotLight));
-	}
 
 	MatHeader matHeader;
 	matHeader.diffuseNameLength = (int)mesh.material.diffuseTexture.length() + 1;

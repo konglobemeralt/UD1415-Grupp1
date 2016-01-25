@@ -53,13 +53,13 @@ struct Material
 
 struct PointLight
 {
-	short bone = -1;
+	unsigned char bone = -1;
 	float pos[3], col[3], intensity;
 };
 
 struct SpotLight
 {
-	short bone;
+	unsigned char bone = -1;
 	float pos[3], col[3], intensity, angle, direction[3];
 };
 
@@ -77,37 +77,24 @@ struct Geometry
 	std::vector<SpotLight> spotLights;
 };
 
-struct SubMesh
-{
-	std::string Name;
-	Geometry geometry;
-};
-
 struct Mesh
 {
 	std::string Name;
 	std::string skeletonID;
-	std::vector<SubMesh> subMeshes;
 	Geometry geometry;
 	Material material;
-};
-
-struct Hitbox
-{
-	int joint;
-	float x[2], y[2], z[2];
 };
 
 //Headers-------------
 
 
 struct MainHeader {
-	int version, meshCount;
+	int version;
 };
 
 struct MeshHeader
 {
-	int nameLength, numberOfVertices, subMeshID, numberPointLights, numberSpotLights;
+	int numberOfVertices, numberPointLights, numberSpotLights;
 };
 
 struct MatHeader {
