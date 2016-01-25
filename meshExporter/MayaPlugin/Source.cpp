@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <shlobj.h>
 
+const int LEVEL_VERSION = 26;
+
 using namespace DirectX;
 using namespace std;
 
@@ -993,7 +995,11 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 
 	char userPath[MAX_PATH];
 	SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);
-	ExportFile(primaryMesh, (string)userPath + "/Google Drive/Stort spelprojekt/ExportedModels/" + primaryMesh.Name + ".bin");//Kanske ha en dialog i fönstret?
+
+	string levelVersion = "-";
+	levelVersion += to_string(LEVEL_VERSION);
+
+	ExportFile(primaryMesh, (string)userPath + "/Google Drive/Stort spelprojekt/ExportedModels/" + primaryMesh.Name + levelVersion + ".bin");//Kanske ha en dialog i fönstret?
 	return false;
 }
 
@@ -1003,7 +1009,7 @@ void ExportFile(Mesh &mesh, std::string path)
 	std::ofstream outfile;
 	outfile.open(path.c_str(), std::ofstream::binary);
 	MainHeader mainHeader;
-	mainHeader.version = 26;
+	mainHeader.version = LEVEL_VERSION;
 	outfile.write((const char*)&mainHeader, sizeof(MainHeader));
 
 	int skeletonStringLength = (int)mesh.skeletonID.size();
