@@ -100,3 +100,15 @@ struct MeshHeader
 struct MatHeader {
 	int diffuseNameLength, specularNameLength;
 };
+
+void splitStringToVector(std::string input, std::vector<std::string> &output, std::string delimiter) {
+	size_t pos = 0;
+	std::string token;
+	while ((pos = input.find(delimiter)) != std::string::npos) {
+		token = input.substr(0, pos);
+		if (!token.empty())
+			output.push_back(token);
+		input.erase(0, pos + delimiter.length());
+	}
+	output.push_back(input);
+};

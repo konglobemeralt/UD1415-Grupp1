@@ -39,6 +39,7 @@ void GenerateHitboxes();
 //fileNameExtract
 string getFileName(const string& string);
 MString skeleton;
+MString timeline;
 
 Animation anim;
 
@@ -127,6 +128,27 @@ public:
 
 };
 
+class updateTimeline : public MPxCommand
+{
+public:
+	updateTimeline() {};
+	~updateTimeline() {};
+
+	virtual MStatus doIt(const MArgList&)
+	{
+		setResult("updateTimeline Called\n");
+		MGlobal::executeCommand("textFieldGrp -q -text $timeline;", timeline);
+		MGlobal::displayInfo(timeline);
+		return MS::kSuccess;
+	}
+
+	static void* creator()
+	{
+		return new updateTimeline;
+	}
+
+};
+
 class generateHitboxes : public MPxCommand
 {
 public:
@@ -165,6 +187,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 	status = plugin.registerCommand("exportSelected", exportSelected::creator);
 	status = plugin.registerCommand("exportSkeleton", exportSkeleton::creator);
 	status = plugin.registerCommand("updateSkeleton", updateSkeleton::creator);
+	status = plugin.registerCommand("updateTimeline", updateTimeline::creator);
 	status = plugin.registerCommand("generateHitboxes", generateHitboxes::creator);
 
 	initUI();
@@ -192,10 +215,11 @@ EXPORT MStatus uninitializePlugin(MObject obj)
 	status = plugin.deregisterCommand("exportSelected");
 	status = plugin.deregisterCommand("exportSkeleton");
 	status = plugin.deregisterCommand("updateSkeleton");
+	status = plugin.deregisterCommand("updateTimeline");
 	status = plugin.deregisterCommand("generateHitboxes");
 
 	deleteUI();
-	
+
 	MGlobal::displayInfo("Maya plugin unloaded!!");
 
 	return MS::kSuccess;
@@ -213,9 +237,10 @@ void initUI()
 	MGlobal::executeCommand("text -label ""Skeleton"";");
 	MGlobal::executeCommand("$skeleton = `textFieldGrp -changeCommand ""updateSkeleton"" -text ""Unrigged"" `;");
 	MGlobal::executeCommand("textFieldGrp -q -text $skeleton;", skeleton);
+	MGlobal::executeCommand("text -label ""Endpoint_of_each_animation"";");
+	MGlobal::executeCommand("$timeline = `textFieldGrp -changeCommand ""updateTimeline"" -text ""empty"" `;");
+	MGlobal::executeCommand("textFieldGrp -q -text $timeline;", timeline);
 	MGlobal::executeCommand("showWindow;");
-	
-	MGlobal::displayInfo(skeleton);
 
 	MGlobal::displayInfo("UI created");
 }
@@ -226,7 +251,7 @@ void deleteUI()
 	MGlobal::displayInfo("UI deleted");
 }
 
-void ExportFinder(bool sl)//sl(selected) sätts genom knapparnas call till ExportFinder
+void ExportFinder(bool sl)//sl(selected) s?tts genom knapparnas call till ExportFinder
 {
 
 	MStringArray scene;
@@ -239,7 +264,7 @@ void ExportFinder(bool sl)//sl(selected) sätts genom knapparnas call till Export
 		MGlobal::executeCommand("ls", scene);
 	}
 
-	//hitta alla meshes i scenen, kolla mot objekt i listan och om de ligger på toppnivå. Kalla ExportMesh på alla som klarar
+	//hitta alla meshes i scenen, kolla mot objekt i listan och om de ligger p? toppniv?. Kalla ExportMesh p? alla som klarar
 	MDagPath dag_path;
 	MItDag dag_iter(MItDag::kBreadthFirst, MFn::kMesh);
 	while (!dag_iter.isDone())
@@ -520,6 +545,66 @@ void OutputSkinCluster(MObject &obj, Geometry &mesh, MString name)
 	}
 }
 
+int TimeToAction(int time, vector<int> &actiontimes)
+{
+	for (int i = 0; i < actiontimes.size(); i++)
+		if (time <= actiontimes[i])
+			return i;
+	return 0;
+}
+
+bool DivideActions()
+{
+	MAnimControl animControl;
+	vector<string> actions;
+	splitStringToVector(timeline.asChar(), actions, ",");
+	vector<int> actiontimes;
+	actiontimes.resize(actions.size());
+	for (unsigned i = 0; i < actions.size(); i++) {
+		try { actiontimes[i] = stoi(actions[i]); }
+		catch (invalid_argument) {
+			MGlobal::displayInfo("Export cancelled, time value failed to parse");
+			return false;
+		}
+		catch (out_of_range) {
+			MGlobal::displayInfo("Export cancelled, time value failed to parse");
+			return false;
+		}
+		if (i != 0)
+			if (actiontimes[i] <= actiontimes[i - 1]) {
+				MGlobal::displayInfo("Export cancelled, time values out of order");
+				return false;
+			}
+		if (actiontimes[i] > animControl.animationEndTime().value() || actiontimes[i] < animControl.animationStartTime().value()) {
+			MGlobal::displayInfo("Export cancelled, time value outside of timeline");
+			return false;
+		}
+	}
+
+	anim.animLayer.resize(actiontimes.size());
+	for (unsigned i = 1; i < anim.animLayer.size(); i++)
+	{
+		anim.animLayer[i].bones.resize(anim.animLayer[0].bones.size());
+		anim.animLayer[i].nrOfFrames = actiontimes[i] - actiontimes[i-1];
+	}
+	for (unsigned i = 0; i < anim.animLayer[0].nrOfFrames; i++)
+	{
+		int action = TimeToAction(anim.animLayer[0].key[i], actiontimes);
+		if (action > 0)
+		{
+			anim.animLayer[action].key.push_back(anim.animLayer[0].key[i]);
+			anim.animLayer[action].time.push_back(anim.animLayer[0].time[i]);
+			for (unsigned j = 0; j < anim.animLayer[0].bones.size(); j++)
+				anim.animLayer[action].bones[j].tranform.push_back(anim.animLayer[0].bones[j].tranform[i]);
+		}
+	}
+	anim.animLayer[0].nrOfFrames = actiontimes[0];
+	anim.animLayer[0].key.resize(anim.animLayer[0].nrOfFrames);
+	anim.animLayer[0].time.resize(anim.animLayer[0].nrOfFrames);
+	for (unsigned i = 0; i < anim.animLayer[0].nrOfFrames; i++)
+		anim.animLayer[0].bones[i].tranform.resize(anim.animLayer[0].nrOfFrames);
+}
+
 void ExportAnimation()
 {
 	// Get bind pose
@@ -566,9 +651,12 @@ void ExportAnimation()
 		// Get animation
 		GetAnimation();
 
+		if (!DivideActions()) return;
+		
+
 		char userPath[MAX_PATH];
 		SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);
-		WriteAnimationData((string)userPath + "/Google Drive/Stort spelprojekt/ExportedModels/HUMANANIMATION.anim");
+		WriteAnimationData((string)userPath + "/Google Drive/Stort spelprojekt/ExportedModels/" + skeleton.asChar() + ".anim");
 	}
 }
 
