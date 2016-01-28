@@ -598,11 +598,11 @@ bool DivideActions()
 				anim.animLayer[action].bones[j].tranform.push_back(anim.animLayer[0].bones[j].tranform[i]);
 		}
 	}
-	anim.animLayer[0].nrOfFrames = actiontimes[0];
-	anim.animLayer[0].key.resize(anim.animLayer[0].nrOfFrames);
-	anim.animLayer[0].time.resize(anim.animLayer[0].nrOfFrames);
-	for (unsigned i = 0; i < anim.animLayer[0].nrOfFrames; i++)
-		anim.animLayer[0].bones[i].tranform.resize(anim.animLayer[0].nrOfFrames);
+	//anim.animLayer[0].nrOfFrames = actiontimes[0];
+	//anim.animLayer[0].key.resize(anim.animLayer[0].nrOfFrames);
+	//anim.animLayer[0].time.resize(anim.animLayer[0].nrOfFrames);
+	//for (unsigned i = 0; i < anim.animLayer[0].nrOfFrames; i++)
+	//	anim.animLayer[0].bones[i].tranform.resize(anim.animLayer[0].nrOfFrames);
 }
 
 void ExportAnimation()
@@ -1066,8 +1066,11 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 	MFnMesh* meshFN;
 	MFnMesh meshFNForMaterial(primaryMeshDag.child(0));
 	if (primaryMeshDag.childCount() > 1)
-		meshFN = new MFnMesh(primaryMeshDag.child(1));
+		meshFN = new MFnMesh(primaryMeshDag.child(primaryMeshDag.childCount()-1));
 	else
+		meshFN = new MFnMesh(primaryMeshDag.child(0));
+
+	if(!strcmp(meshFN->name().asChar(), "Orig"))
 		meshFN = new MFnMesh(primaryMeshDag.child(0));
 
 	//MGlobal::displayInfo(MString("TITTA HÄR: ") + primaryMeshDag.childCount());
