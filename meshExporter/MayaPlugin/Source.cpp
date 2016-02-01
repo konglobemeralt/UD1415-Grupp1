@@ -608,7 +608,7 @@ void ExportAnimation()
 	if (index != 0)
 	{
 		MGlobal::executeCommand("undo", false, true);
-		anim.animHeader.version = 10;
+		anim.animHeader.version = ANIMATION_VERSION;
 		anim.animHeader.nrOfBones = index;
 
 		// Convert bind pose from local to world
@@ -721,7 +721,8 @@ void GetAnimation()
 				anim.animLayer[layerIndex].bones.back().nrOfTimes++;
 
 				// Get animation
-				animControl.setCurrentTime(time);
+				animControl.setCurrentTime(mitKey.time());
+				MGlobal::displayInfo(MString("TIME: ") + mitKey.time().value());
 
 				// Get matrix
 				MFnIkJoint joint(itJoint.item());
