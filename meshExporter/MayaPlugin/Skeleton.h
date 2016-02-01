@@ -16,8 +16,8 @@ public:
 	{
 		unsigned int version;
 		unsigned int framerate;
-		unsigned int nrOfLayers;
 		unsigned int nrOfBones;
+		unsigned int nrOfLayers;
 	};
 
 	struct BindPoseData
@@ -36,11 +36,15 @@ public:
 	struct BoneAnimation
 	{
 		std::vector<FrameData> tranform;
+		std::vector<float> time;
+		std::vector<int> key;
+		int nrOfTimes;
 	};
 
 	struct AnimationLayers
 	{
 		unsigned int nrOfFrames;
+		int endKeyFrame;
 		std::vector<float> time;
 		std::vector<int> key;
 		std::vector<BoneAnimation> bones;
@@ -52,7 +56,6 @@ public:
 	std::vector<AnimationLayers> animLayer;
 	AnimationHeader animHeader;
 	std::vector<BindPoseData> bindPose;
-	
 };
 
 Animation::Animation() {};

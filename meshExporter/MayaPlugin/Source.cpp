@@ -11,6 +11,7 @@
 #include <shlobj.h>
 
 const int LEVEL_VERSION = 26;
+const int ANIMATION_VERSION = 11;
 
 using namespace DirectX;
 using namespace std;
@@ -582,27 +583,14 @@ bool DivideActions()
 	}
 
 	anim.animLayer.resize(actiontimes.size());
+	anim.animHeader.nrOfLayers = actiontimes.size();
+	anim.animLayer[0].nrOfFrames = actiontimes[0];
+	anim.animLayer[0].endKeyFrame = anim.animLayer[0].nrOfFrames;
 	for (unsigned i = 1; i < anim.animLayer.size(); i++)
 	{
-		anim.animLayer[i].bones.resize(anim.animLayer[0].bones.size());
 		anim.animLayer[i].nrOfFrames = actiontimes[i] - actiontimes[i-1];
+		anim.animLayer[i].endKeyFrame = actiontimes[i];
 	}
-	for (unsigned i = 0; i < anim.animLayer[0].nrOfFrames; i++)
-	{
-		int action = TimeToAction(anim.animLayer[0].key[i], actiontimes);
-		if (action > 0)
-		{
-			anim.animLayer[action].key.push_back(anim.animLayer[0].key[i]);
-			anim.animLayer[action].time.push_back(anim.animLayer[0].time[i]);
-			for (unsigned j = 0; j < anim.animLayer[0].bones.size(); j++)
-				anim.animLayer[action].bones[j].tranform.push_back(anim.animLayer[0].bones[j].tranform[i]);
-		}
-	}
-	//anim.animLayer[0].nrOfFrames = actiontimes[0];
-	//anim.animLayer[0].key.resize(anim.animLayer[0].nrOfFrames);
-	//anim.animLayer[0].time.resize(anim.animLayer[0].nrOfFrames);
-	//for (unsigned i = 0; i < anim.animLayer[0].nrOfFrames; i++)
-	//	anim.animLayer[0].bones[i].tranform.resize(anim.animLayer[0].nrOfFrames);
 }
 
 void ExportAnimation()
@@ -646,17 +634,16 @@ void ExportAnimation()
 		anim.animHeader.nrOfLayers = 0;
 
 		// Get animation layers
-		GetAnimationLayer();
-
-		// Get animation
-		GetAnimation();
-
-		if (!DivideActions()) return;
-		
+		DivideActions();
+		GetAnimation();		
 
 		char userPath[MAX_PATH];
 		SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, userPath);
-		WriteAnimationData((string)userPath + "/Google Drive/Stort spelprojekt/ExportedModels/" + skeleton.asChar() + ".anim");
+
+		string animationVersion = "-";
+		animationVersion += to_string(ANIMATION_VERSION);
+
+		WriteAnimationData((string)userPath + "/Google Drive/Stort spelprojekt/ExportedModels/" + skeleton.asChar() + animationVersion + ".anim");
 	}
 }
 
@@ -702,100 +689,55 @@ void GetBindPose(MObject& object, int index)
 	DirectX::XMStoreFloat4x4(&anim.bindPose.back().bindPose, XMMatrixAffineTransformation(scaleV, zero, rotationV, translationV));
 }
 
-void GetAnimationLayer()
-{
-	MAnimControl animControl;
-	MTime time = animControl.playbackSpeed();
-	float playBackSpeed = (float)time.value();
-
-	MItDependencyNodes itJointAnim(MFn::kJoint);
-	for (; !itJointAnim.isDone(); itJointAnim.next()) {
-		MFnDependencyNode depNodeAnim(itJointAnim.item());
-		MPlug animPlug = depNodeAnim.findPlug("translateX");
-		MPlugArray animPlugArray;
-		animPlug.connectedTo(animPlugArray, false, true);
-
-		for (unsigned int i = 0; i < animPlugArray.length(); i++) {
-			MObject layerObject = animPlugArray[i].node();
-			if (layerObject.hasFn(MFn::kAnimLayer)) {
-				anim.animHeader.nrOfLayers++;
-				anim.animLayer.resize(anim.animHeader.nrOfLayers);
-				anim.animLayer.back().nrOfFrames = 0;
-				anim.animLayer.back().layerObject = layerObject;
-
-				MFnDependencyNode layerDepNode(layerObject);
-				MPlug layerPlug = layerDepNode.findPlug("foregroundWeight");
-				MPlugArray layerPlugArray;
-				layerPlug.connectedTo(layerPlugArray, false, true);
-
-				bool addednrOfKeys = false;
-				for (unsigned int j = 0; j < layerPlugArray.length(); j++) {
-					MObject blendObject = layerPlugArray[j].node();
-					if (blendObject.hasFn(MFn::kBlendNodeDoubleLinear)) {
-						MFnDependencyNode blendDepNode(blendObject);
-						MPlug blendPlug = blendDepNode.findPlug("inputA");	// Maybe should be inputB
-						MPlugArray blendPlugArray;
-						blendPlug.connectedTo(blendPlugArray, true, false);
-
-						for (unsigned int k = 0; k < blendPlugArray.length(); k++) {
-							MObject curveObject = blendPlugArray[k].node();
-							if (curveObject.hasFn(MFn::kAnimCurve)) {
-								MFnAnimCurve rootCurve(curveObject);
-
-								if (rootCurve.numKeys() > 0 && addednrOfKeys == false) {
-									for (unsigned int l = 0; l < rootCurve.numKeys(); l++) {
-										time = rootCurve.time(l);
-										anim.animLayer.back().nrOfFrames++;
-										anim.animLayer.back().time.push_back(((float)time.value() / 60.0f) * playBackSpeed);
-										anim.animLayer.back().key.push_back(((int)time.value()));
-									}
-									addednrOfKeys = true;
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
 void GetAnimation()
 {
-	MTime time;
 	MAnimControl animControl;
+	MStatus stat;
+	MTime time = animControl.playbackSpeed();
+	float playBackSpeed = (float)time.value();
+	int layerIndex = 0;
 
-	for (size_t i = 0; i < anim.animHeader.nrOfLayers; i++) {
-		MFnDependencyNode layerDepNode(anim.animLayer.back().layerObject);
-		MGlobal::executeCommand("animLayer -solo true -edit " + layerDepNode.name(), false, true);
+	MItDependencyNodes itJoint(MFn::kJoint);
+	for (; !itJoint.isDone(); itJoint.next())
+	{
+		MFnDependencyNode depNodeAnim(itJoint.item());
+		MPlug animPlug = depNodeAnim.findPlug("translateX");
+		MFnAnimCurve animCurve(animPlug, &stat);
+		if (stat == MStatus::kSuccess)
+		{
+			MItKeyframe mitKey(animCurve.object());
+			anim.animLayer[0].bones.push_back(Animation::BoneAnimation());
+			anim.animLayer[0].bones.back().nrOfTimes = 0;
+			for (; !mitKey.isDone(); mitKey.next())
+			{
+				if (mitKey.time().value() > anim.animLayer[layerIndex].endKeyFrame)
+				{
+					layerIndex++;
+					anim.animLayer[layerIndex].bones.push_back(Animation::BoneAnimation());
+					anim.animLayer[layerIndex].bones.back().nrOfTimes = 0;
+				}
+				anim.animLayer[layerIndex].bones.back().time.push_back(((float)mitKey.time().value() / 60.0f) * playBackSpeed);
+				anim.animLayer[layerIndex].bones.back().key.push_back(((int)mitKey.time().value()));
+				anim.animLayer[layerIndex].bones.back().nrOfTimes++;
 
-		MItDependencyNodes itJointKeys(MFn::kJoint);
-		unsigned int boneIndex = 0;
-		for (; !itJointKeys.isDone(); itJointKeys.next()) {
-			anim.animLayer[i].bones.resize(anim.animLayer[i].bones.size() + 1);
-			for (size_t j = 0; j < anim.animLayer[i].nrOfFrames; j++) {
-				time.setValue(anim.animLayer[i].key[j]);
+				// Get animation
 				animControl.setCurrentTime(time);
 
 				// Get matrix
-				MFnIkJoint joint(itJointKeys.item());
+				MFnIkJoint joint(itJoint.item());
 				double scale[3];
 				double rot[4];
 				MVector translation = joint.getTranslation(MSpace::kTransform);
 				joint.getRotationQuaternion(rot[0], rot[1], rot[2], rot[3]);
 				joint.getScale(scale);
-				anim.animLayer[i].bones[boneIndex].tranform.push_back(Animation::FrameData());
-				anim.animLayer[i].bones[boneIndex].tranform.back().translation = XMFLOAT3((float)translation.x, (float)translation.y, -(float)translation.z);
-				anim.animLayer[i].bones[boneIndex].tranform.back().rotation = XMFLOAT4((float)rot[0], (float)rot[1], -(float)rot[2], -(float)rot[3]);
-				anim.animLayer[i].bones[boneIndex].tranform.back().scale = XMFLOAT3((float)scale[0], (float)scale[1], (float)scale[2]);
+				anim.animLayer[layerIndex].bones.back().tranform.push_back(Animation::FrameData());
+				anim.animLayer[layerIndex].bones.back().tranform.back().translation = XMFLOAT3((float)translation.x, (float)translation.y, -(float)translation.z);
+				anim.animLayer[layerIndex].bones.back().tranform.back().rotation = XMFLOAT4((float)rot[0], (float)rot[1], -(float)rot[2], -(float)rot[3]);
+				anim.animLayer[layerIndex].bones.back().tranform.back().scale = XMFLOAT3((float)scale[0], (float)scale[1], (float)scale[2]);
 			}
-			boneIndex++;
+			layerIndex = 0;
 		}
-		MGlobal::executeCommand("animLayer -solo false -edit " + layerDepNode.name(), false, true);
 	}
-
-	time.setValue(1);
-	animControl.setCurrentTime(time);
 }
 
 void WriteAnimationData(std::string path)
@@ -808,21 +750,17 @@ void WriteAnimationData(std::string path)
 	{
 		// Skeleton header
 		outfile.write((char*)&anim.animHeader, sizeof(Animation::AnimationHeader));
-		for (size_t i = 0; i < anim.animHeader.nrOfLayers; i++)
-		{
-			outfile.write((char*)&anim.animLayer[i].nrOfFrames, sizeof(int));
-		}
 		// Parents and bindposes
 		outfile.write((char*)anim.bindPose.data(), sizeof(Animation::BindPoseData) * anim.animHeader.nrOfBones);
 
 		// frames per layer
 		for (size_t i = 0; i < anim.animHeader.nrOfLayers; i++)
 		{
-			outfile.write((char*)anim.animLayer[i].time.data(), sizeof(float) * anim.animLayer[i].nrOfFrames);
-
 			for (size_t j = 0; j < anim.animHeader.nrOfBones; j++)
 			{
-				outfile.write((char*)anim.animLayer[i].bones[j].tranform.data(), sizeof(Animation::FrameData) * anim.animLayer[i].nrOfFrames);
+				outfile.write((char*)&anim.animLayer[i].bones[j].nrOfTimes, sizeof(int));
+				outfile.write((char*)anim.animLayer[i].bones[j].time.data(), sizeof(float) * anim.animLayer[i].bones[j].nrOfTimes);
+				outfile.write((char*)anim.animLayer[i].bones[j].tranform.data(), sizeof(Animation::FrameData) * anim.animLayer[i].bones[j].nrOfTimes);
 			}
 		}
 		outfile.close();

@@ -47,6 +47,7 @@
 #include<maya/MItGeometry.h>
 #include<maya/MFnWeightGeometryFilter.h>
 #include<maya/MAnimControl.h>
+#include <maya/MItKeyframe.h>
 
 // Messages
 #include <maya/MMessage.h>
