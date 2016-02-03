@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <shlobj.h>
 
-const int LEVEL_VERSION = 26;
+const int LEVEL_VERSION = 27;
 const int ANIMATION_VERSION = 11;
 
 using namespace DirectX;
@@ -343,7 +343,7 @@ void ExtractLights(Mesh &mesh)
 
 			MFnTransform lightTransform(point.parent(0));
 			MFnTransform parent(lightTransform.parent(0));
-			MVector translation = parent.translation(MSpace::kObject);
+			MVector translation = lightTransform.translation(MSpace::kObject);
 			pointLight.pos[0] = (float)translation.x;
 			pointLight.pos[1] = (float)translation.y;
 			pointLight.pos[2] = (float)translation.z;
@@ -352,6 +352,10 @@ void ExtractLights(Mesh &mesh)
 			pointLight.col[1] = point.color().g;
 			pointLight.col[2] = point.color().b;
 			pointLight.intensity = point.intensity();
+
+			double scale[3];
+			lightTransform.getScale(scale);
+			pointLight.range = (float)scale[0] * 0.77f;
 
 			if (parent.object().hasFn(MFn::kJoint))
 			{
@@ -380,7 +384,7 @@ void ExtractLights(Mesh &mesh)
 
 			MFnTransform lightTransform(spot.parent(0));
 			MFnTransform parent(lightTransform.parent(0));
-			MVector translation = parent.translation(MSpace::kObject);
+			MVector translation = lightTransform.translation(MSpace::kObject);
 			spotlight.pos[0] = (float)translation.x;
 			spotlight.pos[1] = (float)translation.y;
 			spotlight.pos[2] = (float)translation.z;
@@ -390,9 +394,15 @@ void ExtractLights(Mesh &mesh)
 			spotlight.col[2] = spot.color().b;
 			spotlight.intensity = spot.intensity();
 			spotlight.angle = (float)spot.coneAngle();
-			spotlight.direction[0] = spot.lightDirection().x;
-			spotlight.direction[1] = spot.lightDirection().y;
-			spotlight.direction[2] = spot.lightDirection().z;
+			MEulerRotation rotation;
+			lightTransform.getRotation(rotation);
+			spotlight.rotation[0] = rotation.x;
+			spotlight.rotation[1] = rotation.y;
+			spotlight.rotation[2] = rotation.z;
+
+			double scale[3];
+			lightTransform.getScale(scale);
+			spotlight.range = (float)scale[0] * 0.77f;
 
 			if (parent.object().hasFn(MFn::kJoint))
 			{
@@ -583,7 +593,7 @@ bool DivideActions()
 	}
 
 	anim.animLayer.resize(actiontimes.size());
-	anim.animHeader.nrOfLayers = actiontimes.size();
+	anim.animHeader.nrOfLayers = (unsigned)actiontimes.size();
 	anim.animLayer[0].nrOfFrames = actiontimes[0];
 	anim.animLayer[0].endKeyFrame = anim.animLayer[0].nrOfFrames;
 	for (unsigned i = 1; i < anim.animLayer.size(); i++)
@@ -591,6 +601,7 @@ bool DivideActions()
 		anim.animLayer[i].nrOfFrames = actiontimes[i] - actiontimes[i-1];
 		anim.animLayer[i].endKeyFrame = actiontimes[i];
 	}
+	return true;
 }
 
 void ExportAnimation()
