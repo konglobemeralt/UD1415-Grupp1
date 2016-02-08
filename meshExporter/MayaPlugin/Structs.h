@@ -60,7 +60,7 @@ struct PointLight
 struct SpotLight
 {
 	unsigned char bone = -1;
-	float intensity, angle, range, pos[3], col[3], direction[3];
+	float intensity, angle, range, pos[3], col[3], rotation[3];
 };
 
 struct Geometry

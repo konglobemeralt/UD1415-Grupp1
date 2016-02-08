@@ -11,11 +11,13 @@
 #include <maya/MFnMesh.h>
 #include <maya/MFnTransform.h>
 #include <maya/MFloatPointArray.h>
+#include <maya\MDoubleArray.h>
 #include <maya/MPointArray.h>
 #include <maya/MIntArray.h>
 #include <maya/MPoint.h>
 #include <maya/MMatrix.h>
 #include <maya/MEulerRotation.h>
+#include <maya/MQuaternion.h>
 #include <maya/MVector.h>
 #include <maya/MItDag.h>
 #include <maya/MItGeometry.h>

@@ -41,7 +41,7 @@ void GenerateHitboxes();
 string getFileName(const string& string);
 MString skeleton;
 MString timeline;
-
+vector<MQuaternion> rots;
 Animation anim;
 
 class exportAll : public MPxCommand
@@ -97,6 +97,7 @@ public:
 	{
 		setResult("exportSkeleton Called\n");
 		MGlobal::displayInfo("Third Button press!");
+		ExportFinder(true);
 		ExportAnimation();
 		return MS::kSuccess;
 	}
@@ -234,7 +235,7 @@ void initUI()
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Generate_Hitboxes"" -command ""generateHitboxes"";");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Everything"" -command ""exportAll"";");
 	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Selected"" -command ""exportSelected"";");
-	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Skeleton"" -command ""exportSkeleton"";");
+	MGlobal::executeCommand("button -w 200 -h 50 -label ""Export_Skinned"" -command ""exportSkeleton"";");
 	MGlobal::executeCommand("text -label ""Skeleton"";");
 	MGlobal::executeCommand("$skeleton = `textFieldGrp -changeCommand ""updateSkeleton"" -text ""Unrigged"" `;");
 	MGlobal::executeCommand("textFieldGrp -q -text $skeleton;", skeleton);
@@ -492,6 +493,11 @@ void OutputSkinCluster(MObject &obj, Geometry &mesh, MString name)
 	//Get influences
 	SD.influences = fn.influenceObjects(infs);
 
+	for(int i = 0; i < SD.influences; i++)
+	{
+		MGlobal::displayInfo(infs[i].partialPathName());
+	}
+
 	// loop through the geometries affected by this cluster
 	int nGeoms = fn.numOutputConnections();
 	for (int i = 0; i < nGeoms; ++i) {
@@ -510,19 +516,19 @@ void OutputSkinCluster(MObject &obj, Geometry &mesh, MString name)
 		// iterate through the components of this geometry
 		MItGeometry gIter(skinPath);
 
-		//Get points affected
+		//Get points affect
 		SD.points = gIter.count();
 
 		for (; !gIter.isDone(); gIter.next()) {
-
 			MObject comp = gIter.component();
 			// Get the weights for this vertex (one per influence object)
 			//
-			MFloatArray wts;
+			MDoubleArray wts;
 			unsigned int infCount;
 			fn.getWeights(skinPath, comp, wts, infCount);
 			if (0 != infCount && !gIter.isDone())
 			{
+
 				int numWeights = 0;
 				float outWts[40] = { 1.0f, 0 };
 				int outInfs[40] = { 0 };
@@ -532,7 +538,7 @@ void OutputSkinCluster(MObject &obj, Geometry &mesh, MString name)
 				for (int j = 0; j != infCount; ++j)
 				{
 					// ignore weights of little effect
-					if (wts[j] > 0.001f)
+					if (wts[j] > 0.001)
 					{
 						if (numWeights != 0)
 						{
@@ -543,13 +549,14 @@ void OutputSkinCluster(MObject &obj, Geometry &mesh, MString name)
 						++numWeights;
 					}
 				}
-				float norm = outWts[0] + outWts[1] + outWts[2] + outWts[3];
 
+				if (gIter.index() == 352)
+					int stop = 0;
 
 				for (int x = 0; x < 4; x++)
 				{
 					mesh.points[gIter.index()].boneIndices[x] = outInfs[x];
-					mesh.points[gIter.index()].boneWeigths[x] = outWts[x] / norm;
+					mesh.points[gIter.index()].boneWeigths[x] = outWts[x];
 				}
 			}
 		}
@@ -737,6 +744,11 @@ void GetAnimation()
 
 				// Get matrix
 				MFnIkJoint joint(itJoint.item());
+
+				MQuaternion rotation;
+				joint.getScaleOrientation(rotation);
+				rots.push_back(rotation);
+
 				double scale[3];
 				double rot[4];
 				MVector translation = joint.getTranslation(MSpace::kTransform);
@@ -749,6 +761,18 @@ void GetAnimation()
 			}
 			layerIndex = 0;
 		}
+	}
+	float timediff = 0, lasttime = 0;
+	for (int i = 0; i < anim.animLayer.size(); i++)
+	{
+		for (int b = 0; b < anim.animLayer[i].bones.size(); b++)
+			for (int t = 0; t < anim.animLayer[i].bones[b].time.size(); t++)
+			{
+				if (anim.animLayer[i].bones[b].time[t] > lasttime)
+					lasttime = anim.animLayer[i].bones[b].time[t];
+				anim.animLayer[i].bones[b].time[t] -= timediff;
+			}
+		timediff = lasttime;
 	}
 }
 
@@ -781,51 +805,11 @@ void WriteAnimationData(std::string path)
 
 Geometry ExtractGeometry(MFnMesh &mesh, int index)
 {
-	//// Test without polytriangulate - MAYBE NOT WORKING
-	//MItMeshPolygon itPoly(mesh.object());
-	//Geometry geometry;
-	//Face tempface;
-	//ExtractLights(mesh, geometry);
-
-	//float2 uv;
-	//MPointArray points;
-	//MIntArray vertexList;
-	//MFloatVectorArray normals;
-	//mesh.getNormals(normals);
-
-	//while (!itPoly.isDone())
-	//{
-	//	itPoly.getTriangles(points, vertexList);
-
-	//	int lengthp = points.length();
-
-	//	for (int i = 0; i < points.length(); i++)
-	//	{
-	//		// Data
-	//		Point temppoints = { points[i].x, points[i].y, -points[i].z };
-	//		geometry.points.push_back(temppoints);
-	//		Normal tempnormals = { normals[itPoly.normalIndex(vertexList[i])].x, 
-	//			normals[itPoly.normalIndex(vertexList[i])].y, 
-	//			-normals[itPoly.normalIndex(vertexList[i])].z };
-	//		geometry.normals.push_back(tempnormals);
-	//		itPoly.getUVAtPoint(points[i], uv);
-	//		TexCoord UVs = {uv[0], 1 - uv[1]};
-	//		geometry.texCoords.push_back(UVs);
-
-	//		// Indices
-	//		tempface.verts[i].pointID = vertexList[i];
-	//		tempface.verts[i].normalID = itPoly.normalIndex(vertexList[i]);
-	//		itPoly.getUVIndex(vertexList[i], tempface.verts[i].texCoordID);
-	//		geometry.faces.push_back(tempface);
-	//	}
-	//	itPoly.next();
-	//}
-
-
 	//samlar data om geometrin och sparar i ett Geometryobjekt
 	Geometry geometry;
 	geometry.index = index;
 	MSpace::Space world_space = MSpace::kTransform;
+	string test = mesh.name().asChar();
 
 	MFloatPointArray points;
 	MFloatVectorArray normals;
@@ -848,8 +832,6 @@ Geometry ExtractGeometry(MFnMesh &mesh, int index)
 		geometry.normals.push_back(tempnormals);
 	}
 
-
-
 	MStringArray uvSets;
 	mesh.getUVSetNames(uvSets);
 
@@ -869,11 +851,12 @@ Geometry ExtractGeometry(MFnMesh &mesh, int index)
 	MStatus stat;
 
 	MItMeshPolygon itFaces(mesh.object(), &stat);
+	MGlobal::displayInfo(mesh.name());
 	while (!itFaces.isDone()) {
 		Face tempface;
 		int vc = itFaces.polygonVertexCount();
 
-		for (int i = 0; i < vc; ++i)
+		for (int i = 0; i < 3; ++i)
 		{
 			tempface.verts[i].pointID = itFaces.vertexIndex(i);
 			tempface.verts[i].normalID = itFaces.normalIndex(i);
@@ -884,7 +867,7 @@ Geometry ExtractGeometry(MFnMesh &mesh, int index)
 		itFaces.next();
 	}
 	
-	MGlobal::executeCommand("undo;", false, true);
+	//MGlobal::executeCommand("undo;", false, true);
 
 	for (MItDependencyNodes it(MFn::kSkinClusterFilter); !it.isDone(); it.next())
 		OutputSkinCluster(it.item(), geometry, mesh.partialPathName());
@@ -912,7 +895,7 @@ Material ExtractMaterial(MFnMesh &meshDag)
 		MFnDependencyNode shaderGroup(shaders[i]);
 		MPlug shaderPlug = shaderGroup.findPlug("surfaceShader");
 		shaderPlug.connectedTo(connections, true, false);
-		for (uint u = 0; u < connections.length(); u++)
+		for (int u = 0; u < connections.length(); u++)
 		{
 			shader = connections[u].node();
 			if (shader.hasFn(MFn::kBlinn))
@@ -982,14 +965,14 @@ Material ExtractMaterial(MFnMesh &meshDag)
 				p.getValue(material.diffColor[3]);
 				p = fn.findPlug("color");
 
-				MPlugArray connections;
-				p.connectedTo(connections, true, false);
+				MPlugArray connections2;
+				p.connectedTo(connections2, true, false);
 
-				for (int i = 0; i != connections.length(); ++i)
+				for (int i = 0; i != connections2.length(); ++i)
 				{
-					if (connections[i].node().apiType() == MFn::kFileTexture)
+					if (connections2[i].node().apiType() == MFn::kFileTexture)
 					{
-						MFnDependencyNode fnDep(connections[i].node());
+						MFnDependencyNode fnDep(connections2[i].node());
 						MPlug filename = fnDep.findPlug("ftn");
 						material.diffuseTexture = filename.asString().asChar();
 						
@@ -1002,6 +985,9 @@ Material ExtractMaterial(MFnMesh &meshDag)
 				}
 				material.specularTexture = "";
 				material.specColor[0] = -1;//Materialet har ingen specularkanal
+				material.specColor[1] = 0;
+				material.specColor[2] = 0;
+				material.specColor[3] = 0;
 			}
 		}
 	}
@@ -1024,13 +1010,19 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 		meshFN = new MFnMesh(primaryMeshDag.child(0));
 
 	//MGlobal::displayInfo(MString("TITTA HÄR: ") + primaryMeshDag.childCount());
-	MGlobal::displayInfo("TITTA HÄR: " + meshFN->name());
+	MGlobal::displayInfo(MString("TITTA HÄR: ") + primaryMeshDag.childCount());
 
 	Mesh primaryMesh;
 	primaryMesh.Name = primaryMeshDag.name().asChar();
 	primaryMesh.geometry = ExtractGeometry(*meshFN, 0);
-	primaryMesh.material = ExtractMaterial(meshFNForMaterial);
+//	primaryMesh.material = ExtractMaterial(meshFNForMaterial);
 	primaryMesh.skeletonID = skeleton.asChar();
+	if (skeleton.asChar() != "Unrigged")
+	{
+		primaryMesh.skeletonID.append("-");
+		primaryMesh.skeletonID.append(to_string(ANIMATION_VERSION));
+		primaryMesh.skeletonID.append(".anim");
+	}
 
 	ExtractLights(primaryMesh);
 
