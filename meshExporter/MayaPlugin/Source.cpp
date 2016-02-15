@@ -493,10 +493,10 @@ void OutputSkinCluster(MObject &obj, Geometry &mesh, MString name)
 	//Get influences
 	SD.influences = fn.influenceObjects(infs);
 
-	for(int i = 0; i < SD.influences; i++)
-	{
-		MGlobal::displayInfo(infs[i].partialPathName());
-	}
+	//for(int i = 0; i < SD.influences; i++)
+	//{
+	//	MGlobal::displayInfo(infs[i].partialPathName());
+	//}
 
 	// loop through the geometries affected by this cluster
 	int nGeoms = fn.numOutputConnections();
@@ -510,6 +510,7 @@ void OutputSkinCluster(MObject &obj, Geometry &mesh, MString name)
 
 		MGlobal::displayInfo(skinPath.partialPathName());
 		MGlobal::displayInfo(name.substring(0, name.length() - 5));
+		MGlobal::displayInfo(MString("NAME: ") + skinPath.partialPathName());
 		//if (strcmp(skinPath.partialPathName().asChar(), name.substring(0, name.length() - 5).asChar()))
 		//	return;
 
@@ -748,7 +749,6 @@ void GetAnimation()
 
 				// Get animation
 				animControl.setCurrentTime(mitKey.time());
-				MGlobal::displayInfo(MString("TIME: ") + mitKey.time().value());
 
 				// Get matrix
 				MFnIkJoint joint(itJoint.item());
