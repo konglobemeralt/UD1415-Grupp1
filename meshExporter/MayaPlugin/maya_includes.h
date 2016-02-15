@@ -50,6 +50,7 @@
 #include<maya/MFnWeightGeometryFilter.h>
 #include<maya/MAnimControl.h>
 #include <maya/MItKeyframe.h>
+#include<maya/MQuaternion.h>
 
 // Messages
 #include <maya/MMessage.h>

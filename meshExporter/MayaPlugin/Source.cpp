@@ -510,8 +510,8 @@ void OutputSkinCluster(MObject &obj, Geometry &mesh, MString name)
 
 		MGlobal::displayInfo(skinPath.partialPathName());
 		MGlobal::displayInfo(name.substring(0, name.length() - 5));
-		if (strcmp(skinPath.partialPathName().asChar(), name.substring(0, name.length() - 5).asChar()))
-			return;
+		//if (strcmp(skinPath.partialPathName().asChar(), name.substring(0, name.length() - 5).asChar()))
+		//	return;
 
 		// iterate through the components of this geometry
 		MItGeometry gIter(skinPath);
@@ -697,11 +697,15 @@ void GetBindPose(MObject& object, int index)
 	double scale[3];
 	double rot[4];
 	MVector translation = joint.getTranslation(MSpace::kTransform);
+	MQuaternion orientation;
+	joint.getOrientation(orientation);
 	joint.getRotationQuaternion(rot[0], rot[1], rot[2], rot[3]);
+	MQuaternion rotation(rot);
+	MQuaternion finalRot = orientation * rotation;
 	joint.getScale(scale);
 	XMVECTOR zero = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 	XMVECTOR translationV = XMVectorSet((float)translation.x, (float)translation.y, -(float)translation.z, 0.0f);
-	XMVECTOR rotationV = XMVectorSet((float)rot[0], (float)rot[1], -(float)rot[2], -(float)rot[3]);
+	XMVECTOR rotationV = XMVectorSet(finalRot.x, finalRot.y, -finalRot.z, -finalRot.w);
 	XMVECTOR scaleV = XMVectorSet((float)scale[0], (float)scale[1], (float)scale[2], 0.0f);
 
 	DirectX::XMStoreFloat4x4(&anim.bindPose.back().bindPose, XMMatrixAffineTransformation(scaleV, zero, rotationV, translationV));
@@ -724,6 +728,10 @@ void GetAnimation()
 		if (stat == MStatus::kSuccess)
 		{
 			MItKeyframe mitKey(animCurve.object());
+			if (!mitKey.isDone())
+			{
+				mitKey.next();
+			}
 			anim.animLayer[0].bones.push_back(Animation::BoneAnimation());
 			anim.animLayer[0].bones.back().nrOfTimes = 0;
 			for (; !mitKey.isDone(); mitKey.next())
@@ -745,18 +753,22 @@ void GetAnimation()
 				// Get matrix
 				MFnIkJoint joint(itJoint.item());
 
-				MQuaternion rotation;
-				joint.getScaleOrientation(rotation);
-				rots.push_back(rotation);
+				//MQuaternion rotation;
+				//joint.getScaleOrientation(rotation);
+				//rots.push_back(rotation);
 
 				double scale[3];
 				double rot[4];
 				MVector translation = joint.getTranslation(MSpace::kTransform);
+				MQuaternion orientation;
+				joint.getOrientation(orientation);
 				joint.getRotationQuaternion(rot[0], rot[1], rot[2], rot[3]);
+				MQuaternion rotation(rot);
+				MQuaternion finalRot = orientation * rotation;
 				joint.getScale(scale);
 				anim.animLayer[layerIndex].bones.back().tranform.push_back(Animation::FrameData());
 				anim.animLayer[layerIndex].bones.back().tranform.back().translation = XMFLOAT3((float)translation.x, (float)translation.y, -(float)translation.z);
-				anim.animLayer[layerIndex].bones.back().tranform.back().rotation = XMFLOAT4((float)rot[0], (float)rot[1], -(float)rot[2], -(float)rot[3]);
+				anim.animLayer[layerIndex].bones.back().tranform.back().rotation = XMFLOAT4(finalRot.x, finalRot.y, -finalRot.z, -finalRot.w);
 				anim.animLayer[layerIndex].bones.back().tranform.back().scale = XMFLOAT3((float)scale[0], (float)scale[1], (float)scale[2]);
 			}
 			layerIndex = 0;
@@ -1000,14 +1012,15 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 	MGlobal::displayInfo(MString("Extracting Primary Mesh " + primaryMeshDag.name()));
 
 	MFnMesh* meshFN;
-	MFnMesh meshFNForMaterial(primaryMeshDag.child(0));
-	if (primaryMeshDag.childCount() > 1)
-		meshFN = new MFnMesh(primaryMeshDag.child(primaryMeshDag.childCount()-1));
-	else
-		meshFN = new MFnMesh(primaryMeshDag.child(0));
+	meshFN = new MFnMesh(primaryMeshDag.child(0));
+	//MFnMesh meshFNForMaterial(primaryMeshDag.child(0));
+	//if (primaryMeshDag.childCount() > 1)
+	//	meshFN = new MFnMesh(primaryMeshDag.child(primaryMeshDag.childCount()-1));
+	//else
+	//	meshFN = new MFnMesh(primaryMeshDag.child(0));
 
-	if(!strcmp(meshFN->name().asChar(), "Orig"))
-		meshFN = new MFnMesh(primaryMeshDag.child(0));
+	//if(!strcmp(meshFN->name().asChar(), "Orig"))
+	//	meshFN = new MFnMesh(primaryMeshDag.child(0));
 
 	//MGlobal::displayInfo(MString("TITTA HÄR: ") + primaryMeshDag.childCount());
 	MGlobal::displayInfo(MString("TITTA HÄR: ") + primaryMeshDag.childCount());
@@ -1015,9 +1028,9 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 	Mesh primaryMesh;
 	primaryMesh.Name = primaryMeshDag.name().asChar();
 	primaryMesh.geometry = ExtractGeometry(*meshFN, 0);
-//	primaryMesh.material = ExtractMaterial(meshFNForMaterial);
+	primaryMesh.material = ExtractMaterial(*meshFN);
 	primaryMesh.skeletonID = skeleton.asChar();
-	if (skeleton.asChar() != "Unrigged")
+	if (primaryMesh.skeletonID != "Unrigged")
 	{
 		primaryMesh.skeletonID.append("-");
 		primaryMesh.skeletonID.append(to_string(ANIMATION_VERSION));
