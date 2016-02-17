@@ -1,6 +1,11 @@
 #pragma once
 #include <vector>
 
+struct Hitbox
+{
+	float center[3], height, width, depth;
+};
+
 struct Point
 {
 	float x, y, z;
@@ -83,6 +88,7 @@ struct Mesh
 	std::string skeletonID;
 	Geometry geometry;
 	Material material;
+	Hitbox* hitbox;
 };
 
 //Headers-------------

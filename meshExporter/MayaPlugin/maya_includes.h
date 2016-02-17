@@ -11,7 +11,7 @@
 #include <maya/MFnMesh.h>
 #include <maya/MFnTransform.h>
 #include <maya/MFloatPointArray.h>
-#include <maya\MDoubleArray.h>
+#include <maya/MDoubleArray.h>
 #include <maya/MPointArray.h>
 #include <maya/MIntArray.h>
 #include <maya/MPoint.h>

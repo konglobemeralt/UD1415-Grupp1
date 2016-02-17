@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <shlobj.h>
 
-const int LEVEL_VERSION = 27;
+const int LEVEL_VERSION = 28;
 const int ANIMATION_VERSION = 11;
 
 using namespace DirectX;
@@ -36,6 +36,7 @@ void GetAnimationLayer();
 void GetAnimation();
 void WriteAnimationData(std::string path);
 void GenerateHitboxes();
+Hitbox GetHitbox(MFnMesh &mesh);
 
 //fileNameExtract
 string getFileName(const string& string);
@@ -322,7 +323,7 @@ void CreateHitbox(MObject& object, unsigned int index)
 	MGlobal::executeCommand("FreezeTransformations");
 }
 
-void GenerateHitboxes()
+void GenerateHitboxes()//Inte använd
 {
 	MItDependencyNodes itJoint(MFn::kJoint);
 	unsigned int index = 0;
@@ -330,6 +331,23 @@ void GenerateHitboxes()
 		CreateHitbox(itJoint.item(), index);
 		index++;
 	}
+}
+
+Hitbox GetHitbox(MFnDagNode& mesh)
+{
+	Hitbox hitbox;
+	MDoubleArray dim;
+	MStringArray names;
+	MGlobal::executeCommand("select " + mesh.name());
+	MGlobal::executeCommand("xform -q -bb", dim);
+	int test = dim.length();
+	hitbox.center[0] = dim[0] + dim[3];
+	hitbox.center[1] = dim[1] + dim[4];
+	hitbox.center[2] = dim[2] + dim[5];
+	hitbox.depth = dim[3] - dim[0];
+	hitbox.height = dim[4] - dim[1];
+	hitbox.width = dim[5] - dim[2];
+	return hitbox;
 }
 
 void ExtractLights(Mesh &mesh)
@@ -1012,7 +1030,21 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 	MGlobal::displayInfo(MString("Extracting Primary Mesh " + primaryMeshDag.name()));
 
 	MFnMesh* meshFN;
+	Mesh primaryMesh;
 	meshFN = new MFnMesh(primaryMeshDag.child(0));
+	for (int i = 0; i < primaryMeshDag.childCount(); i++)
+	{
+		MFnDagNode child = primaryMeshDag.child(i);
+		if (child.child(0).hasFn(MFn::kMesh) && child.name() == "hitbox")
+		{
+			primaryMesh.hitbox = &GetHitbox(child);
+		}
+	}
+	if (primaryMesh.hitbox == nullptr)
+	{
+		MGlobal::displayInfo("No hitbox found, juryrigging one(this is bad)");
+		primaryMesh.hitbox = &GetHitbox(primaryMeshDag);
+	}
 	//MFnMesh meshFNForMaterial(primaryMeshDag.child(0));
 	//if (primaryMeshDag.childCount() > 1)
 	//	meshFN = new MFnMesh(primaryMeshDag.child(primaryMeshDag.childCount()-1));
@@ -1025,7 +1057,6 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 	//MGlobal::displayInfo(MString("TITTA HÄR: ") + primaryMeshDag.childCount());
 	MGlobal::displayInfo(MString("TITTA HÄR: ") + primaryMeshDag.childCount());
 
-	Mesh primaryMesh;
 	primaryMesh.Name = primaryMeshDag.name().asChar();
 	primaryMesh.geometry = ExtractGeometry(*meshFN, 0);
 	primaryMesh.material = ExtractMaterial(*meshFN);
@@ -1088,6 +1119,8 @@ void ExportFile(Mesh &mesh, std::string path)
 		outfile.write((const char*)mesh.geometry.vertices.data(), meshHeader.numberOfVertices * sizeof(VertexOut));
 	outfile.write((const char*)mesh.geometry.pointLights.data(), meshHeader.numberPointLights * sizeof(PointLight));
 	outfile.write((const char*)mesh.geometry.spotLights.data(), meshHeader.numberSpotLights * sizeof(SpotLight));
+
+	outfile.write((const char*)mesh.hitbox, sizeof(Hitbox));
 
 	MatHeader matHeader;
 	matHeader.diffuseNameLength = (int)mesh.material.diffuseTexture.length() + 1;
