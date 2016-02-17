@@ -45,8 +45,6 @@ public:
 	{
 		unsigned int nrOfFrames;
 		int endKeyFrame;
-		std::vector<float> time;
-		std::vector<int> key;
 		std::vector<BoneAnimation> bones;
 		MObject layerObject;
 	};

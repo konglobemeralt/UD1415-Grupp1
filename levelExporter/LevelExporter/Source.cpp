@@ -238,7 +238,7 @@ void exportLevelData()
 				mDataString.back().tileType = tileType.asChar();
 				mData.back().tileType = 4;
 			}
-			else if (!strcmp(tileType.asChar(), "Trigger"))
+			else if (!strcmp(tileType.asChar(), "Camera"))
 			{
 				MGlobal::displayInfo("tile says " + tileType);
 				mDataString.back().tileType = tileType.asChar();
@@ -255,6 +255,12 @@ void exportLevelData()
 				MGlobal::displayInfo("tile says " + tileType);
 				mDataString.back().tileType = tileType.asChar();
 				mData.back().tileType = 7;
+			}
+			else if (!strcmp(tileType.asChar(), "Furniture"))
+			{
+				MGlobal::displayInfo("tile says " + tileType);
+				mDataString.back().tileType = tileType.asChar();
+				mData.back().tileType = 8;
 			}
 		}
 		
@@ -274,8 +280,8 @@ void exportLevelData()
 		mDataString[i].posZ -= levelSizeYmin;
 	}
 
-	lvlHead.levelSizeX = (levelSizeXmax - levelSizeXmin) + 1;
-	lvlHead.levelSizeY = (levelSizeYmax - levelSizeYmin) + 1;
+	lvlHead.levelSizeY = (levelSizeXmax - levelSizeXmin) + 1;
+	lvlHead.levelSizeX = (levelSizeYmax - levelSizeYmin) + 1;
 
 	//For txt file,
 	//Translating and exporting--------------------------

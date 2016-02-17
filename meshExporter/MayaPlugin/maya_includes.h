@@ -11,11 +11,13 @@
 #include <maya/MFnMesh.h>
 #include <maya/MFnTransform.h>
 #include <maya/MFloatPointArray.h>
+#include <maya\MDoubleArray.h>
 #include <maya/MPointArray.h>
 #include <maya/MIntArray.h>
 #include <maya/MPoint.h>
 #include <maya/MMatrix.h>
 #include <maya/MEulerRotation.h>
+#include <maya/MQuaternion.h>
 #include <maya/MVector.h>
 #include <maya/MItDag.h>
 #include <maya/MItGeometry.h>
@@ -48,6 +50,7 @@
 #include<maya/MFnWeightGeometryFilter.h>
 #include<maya/MAnimControl.h>
 #include <maya/MItKeyframe.h>
+#include<maya/MQuaternion.h>
 
 // Messages
 #include <maya/MMessage.h>
