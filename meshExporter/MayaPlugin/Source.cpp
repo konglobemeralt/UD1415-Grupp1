@@ -341,9 +341,9 @@ Hitbox GetHitbox(MFnDagNode& mesh)
 	MGlobal::executeCommand("select " + mesh.name());
 	MGlobal::executeCommand("xform -q -bb", dim);
 	int test = dim.length();
-	hitbox.center[0] = dim[0] + dim[3];
-	hitbox.center[1] = dim[1] + dim[4];
-	hitbox.center[2] = dim[2] + dim[5];
+	hitbox.center[0] = (dim[0] + dim[3]) / 2;
+	hitbox.center[1] = (dim[1] + dim[4]) / 2;
+	hitbox.center[2] = (dim[2] + dim[5]) / 2;
 	hitbox.depth = dim[3] - dim[0];
 	hitbox.height = dim[4] - dim[1];
 	hitbox.width = dim[5] - dim[2];
