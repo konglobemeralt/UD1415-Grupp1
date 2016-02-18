@@ -88,7 +88,7 @@ struct Mesh
 	std::string skeletonID;
 	Geometry geometry;
 	Material material;
-	Hitbox* hitbox;
+	Hitbox* hitbox = nullptr;
 };
 
 //Headers-------------
