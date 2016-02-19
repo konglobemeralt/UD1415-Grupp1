@@ -278,9 +278,6 @@ void ExportFinder(bool sl)//sl(selected) s?tts genom knapparnas call till Export
 			MFnDagNode transform = dag_node.parent(0);
 			MFnDagNode parentPath(transform.parent(0));
 
-			if (strcmp(parentPath.fullPathName().asChar(), ""))
-				break;
-
 			if (!dag_node.isIntermediateObject())
 				for (uint i = 0; i < scene.length(); i++)
 					if (strcmp(transform.name().asChar(), scene[i].asChar()) == 0)
@@ -1000,7 +997,7 @@ Material ExtractMaterial(MFnMesh &meshDag)
 
 				for (int i = 0; i != connections2.length(); ++i)
 				{
-					if (connections2[i].node().apiType() == MFn::kFileTexture)
+					if (connections2[i].node().apiType() == MFn::kFileTexture || connections2[i].node().apiType() == MFn::kPsdFileTexture)
 					{
 						MFnDependencyNode fnDep(connections2[i].node());
 						MPlug filename = fnDep.findPlug("ftn");
