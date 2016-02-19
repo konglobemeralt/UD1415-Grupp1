@@ -276,7 +276,6 @@ void ExportFinder(bool sl)//sl(selected) s?tts genom knapparnas call till Export
 		{
 			MFnDagNode dag_node = dag_path.node();
 			MFnDagNode transform = dag_node.parent(0);
-			MFnDagNode parentPath(transform.parent(0));
 
 			if (!dag_node.isIntermediateObject())
 				for (uint i = 0; i < scene.length(); i++)
@@ -434,7 +433,7 @@ void ExtractLights(Mesh &mesh)
 				}
 				mesh.geometry.spotLights.push_back(spotlight);
 			}
-			else if (parent.object().hasFn(MFn::kMesh))
+			else if (parent.child(0).hasFn(MFn::kMesh))
 			{
 				if (!strcmp(parent.name().asChar(), mesh.Name.c_str()))
 					mesh.geometry.spotLights.push_back(spotlight);
