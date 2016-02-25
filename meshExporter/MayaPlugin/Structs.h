@@ -88,6 +88,8 @@ struct Mesh
 	std::string skeletonID;
 	Geometry geometry;
 	Material material;
+	bool particles = false, icon = false;
+	float particlespawnerpos[3], iconpos[3];
 	Hitbox* hitbox = nullptr;
 };
 
@@ -96,6 +98,7 @@ struct Mesh
 
 struct MainHeader {
 	int version;
+	bool particles, icon;
 };
 
 struct MeshHeader

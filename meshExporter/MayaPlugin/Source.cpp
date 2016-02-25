@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <shlobj.h>
 
-const int LEVEL_VERSION = 28;
+const int LEVEL_VERSION = 29;
 const int ANIMATION_VERSION = 11;
 
 using namespace DirectX;
@@ -337,12 +337,12 @@ Hitbox GetHitbox(MFnDagNode& mesh)
 	MGlobal::executeCommand("select " + mesh.name());
 	MGlobal::executeCommand("xform -q -bb", dim);
 	int test = dim.length();
-	hitbox.center[0] = (dim[0] + dim[3]) / 2;
-	hitbox.center[1] = (dim[1] + dim[4]) / 2;
-	hitbox.center[2] = (dim[2] + dim[5]) / 2;
-	hitbox.depth = dim[3] - dim[0];
-	hitbox.height = dim[4] - dim[1];
-	hitbox.width = dim[5] - dim[2];
+	hitbox.center[0] = (float)(dim[0] + dim[3]) / 2;
+	hitbox.center[1] = (float)(dim[1] + dim[4]) / 2;
+	hitbox.center[2] = (float)(dim[2] + dim[5]) / 2;
+	hitbox.depth = (float)dim[3] - (float)dim[0];
+	hitbox.height = (float)dim[4] - (float)dim[1];
+	hitbox.width = (float)dim[5] - (float)dim[2];
 	return hitbox;
 }
 
@@ -411,9 +411,9 @@ void ExtractLights(Mesh &mesh)
 			spotlight.angle = (float)spot.coneAngle();
 			MEulerRotation rotation;
 			lightTransform.getRotation(rotation);
-			spotlight.rotation[0] = rotation.x;
-			spotlight.rotation[1] = rotation.y;
-			spotlight.rotation[2] = rotation.z;
+			spotlight.rotation[0] = (float)rotation.x;
+			spotlight.rotation[1] = (float)rotation.y;
+			spotlight.rotation[2] = (float)rotation.z;
 
 			double scale[3];
 			lightTransform.getScale(scale);
@@ -557,8 +557,8 @@ void OutputSkinCluster(MObject &obj, Geometry &mesh, MString name)
 					{
 						if (numWeights != 0)
 						{
-							outWts[0] -= wts[j];
-							outWts[numWeights] = wts[j];
+							outWts[0] -= (float)wts[j];
+							outWts[numWeights] = (float)wts[j];
 						}
 						outInfs[numWeights] = j;
 						++numWeights;
@@ -720,7 +720,7 @@ void GetBindPose(MObject& object, int index)
 	joint.getScale(scale);
 	XMVECTOR zero = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 	XMVECTOR translationV = XMVectorSet((float)translation.x, (float)translation.y, -(float)translation.z, 0.0f);
-	XMVECTOR rotationV = XMVectorSet(finalRot.x, finalRot.y, -finalRot.z, -finalRot.w);
+	XMVECTOR rotationV = XMVectorSet((float)finalRot.x, (float)finalRot.y, (float)-finalRot.z, (float)-finalRot.w);
 	XMVECTOR scaleV = XMVectorSet((float)scale[0], (float)scale[1], (float)scale[2], 0.0f);
 
 	DirectX::XMStoreFloat4x4(&anim.bindPose.back().bindPose, XMMatrixAffineTransformation(scaleV, zero, rotationV, translationV));
@@ -782,7 +782,7 @@ void GetAnimation()
 				joint.getScale(scale);
 				anim.animLayer[layerIndex].bones.back().tranform.push_back(Animation::FrameData());
 				anim.animLayer[layerIndex].bones.back().tranform.back().translation = XMFLOAT3((float)translation.x, (float)translation.y, -(float)translation.z);
-				anim.animLayer[layerIndex].bones.back().tranform.back().rotation = XMFLOAT4(finalRot.x, finalRot.y, -finalRot.z, -finalRot.w);
+				anim.animLayer[layerIndex].bones.back().tranform.back().rotation = XMFLOAT4((float)finalRot.x, (float)finalRot.y, (float)-finalRot.z, (float)-finalRot.w);
 				anim.animLayer[layerIndex].bones.back().tranform.back().scale = XMFLOAT3((float)scale[0], (float)scale[1], (float)scale[2]);
 			}
 			layerIndex = 0;
@@ -921,7 +921,7 @@ Material ExtractMaterial(MFnMesh &meshDag)
 		MFnDependencyNode shaderGroup(shaders[i]);
 		MPlug shaderPlug = shaderGroup.findPlug("surfaceShader");
 		shaderPlug.connectedTo(connections, true, false);
-		for (int u = 0; u < connections.length(); u++)
+		for (uint u = 0; u < connections.length(); u++)
 		{
 			shader = connections[u].node();
 			if (shader.hasFn(MFn::kBlinn))
@@ -1025,15 +1025,38 @@ bool ExportMesh(MFnDagNode &primaryMeshDag)
 	//Exporterar en mesh och alla dess submeshes. Testar alla subs att deras parent är primaryMesh
 	MGlobal::displayInfo(MString("Extracting Primary Mesh " + primaryMeshDag.name()));
 
+
 	MFnMesh* meshFN;
 	Mesh primaryMesh;
 	meshFN = new MFnMesh(primaryMeshDag.child(0));
-	for (int i = 0; i < primaryMeshDag.childCount(); i++)
+	for (uint i = 0; i < primaryMeshDag.childCount(); i++)
 	{
 		MFnDagNode child = primaryMeshDag.child(i);
-		if (child.child(0).hasFn(MFn::kMesh) && child.name() == "hitbox")
+		if (child.child(0).hasFn(MFn::kMesh))
 		{
-			primaryMesh.hitbox = &GetHitbox(child);
+			string childname = child.name().asChar();
+			for (int c = 0; c < childname.size(); c++)
+				tolower(c);
+			if (child.name() == "hitbox")
+				primaryMesh.hitbox = &GetHitbox(child);
+			if (child.name() == "particlespawner")
+			{
+				MFnTransform childfn(child.object());
+				MVector translation = childfn.translation(MSpace::kObject);
+				primaryMesh.particlespawnerpos[0] = (float)translation.x;
+				primaryMesh.particlespawnerpos[1] = (float)translation.y;
+				primaryMesh.particlespawnerpos[2] = (float)translation.z;
+				primaryMesh.particles = true;
+			}
+			if (child.name() == "icon")
+			{
+				MFnTransform childfn(child.object());
+				MVector translation = childfn.translation(MSpace::kObject);
+				primaryMesh.iconpos[0] = (float)translation.x;
+				primaryMesh.iconpos[1] = (float)translation.y;
+				primaryMesh.iconpos[2] = (float)translation.z;
+				primaryMesh.icon = true;
+			}
 		}
 	}
 	if (primaryMesh.hitbox == nullptr)
@@ -1083,6 +1106,8 @@ void ExportFile(Mesh &mesh, std::string path)
 	outfile.open(path.c_str(), std::ofstream::binary);
 	MainHeader mainHeader;
 	mainHeader.version = LEVEL_VERSION;
+	mainHeader.particles = mesh.particles;
+	mainHeader.icon = mesh.icon;
 	outfile.write((const char*)&mainHeader, sizeof(MainHeader));
 
 	int skeletonStringLength = (int)mesh.skeletonID.size();
@@ -1117,6 +1142,10 @@ void ExportFile(Mesh &mesh, std::string path)
 	outfile.write((const char*)mesh.geometry.spotLights.data(), meshHeader.numberSpotLights * sizeof(SpotLight));
 
 	outfile.write((const char*)mesh.hitbox, sizeof(Hitbox));
+	if (mainHeader.particles)
+		outfile.write((const char*)mesh.particlespawnerpos, 12);
+	if (mainHeader.icon)
+		outfile.write((const char*)mesh.iconpos, 12);
 
 	MatHeader matHeader;
 	matHeader.diffuseNameLength = (int)mesh.material.diffuseTexture.length() + 1;
